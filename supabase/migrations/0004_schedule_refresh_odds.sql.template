@@ -1,0 +1,67 @@
+-- TEMPLATE — completar los <placeholders> y ejecutar en el SQL editor de Supabase.
+-- Programa el refresh automático de cuotas invocando la edge function `refresh-odds`.
+--
+-- Necesitas:
+--   <PROJECT_REF>        p. ej. dngolugwcemkexbeagzu
+--   <SERVICE_ROLE_KEY>   Dashboard > Project Settings > API > service_role (secret)
+--   <REFRESH_CRON_SECRET> el mismo valor que pusiste en el secret REFRESH_CRON_SECRET
+--                         de la edge function (invéntalo, string aleatorio largo)
+
+-- Guarda los secretos en Vault (no en texto plano en el cron):
+select vault.create_secret('<SERVICE_ROLE_KEY>',   'refresh_odds_service_key');
+select vault.create_secret('<REFRESH_CRON_SECRET>', 'refresh_odds_cron_secret');
+
+-- Refresh ligero (1X2 + goles) cada 3 horas
+select cron.schedule(
+  'refresh-odds-light', '0 */3 * * *',
+  $$
+  select net.http_post(
+    url     := 'https://<PROJECT_REF>.supabase.co/functions/v1/refresh-odds',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'refresh_odds_service_key')
+    ),
+    body := jsonb_build_object(
+      'cron', true, 'deep', false,
+      'secret', (select decrypted_secret from vault.decrypted_secrets where name = 'refresh_odds_cron_secret')
+    )
+  );
+  $$
+);
+
+-- Refresh profundo (además córners + BTTS por evento) 2 veces al día
+select cron.schedule(
+  'refresh-odds-deep', '30 6,18 * * *',
+  $$
+  select net.http_post(
+    url     := 'https://<PROJECT_REF>.supabase.co/functions/v1/refresh-odds',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'refresh_odds_service_key')
+    ),
+    body := jsonb_build_object(
+      'cron', true, 'deep', true,
+      'secret', (select decrypted_secret from vault.decrypted_secrets where name = 'refresh_odds_cron_secret')
+    )
+  );
+  $$
+);
+
+-- Resolución automática de apuestas terminadas, cada 2 horas.
+-- (Solo consume créditos de /scores si hay apuestas pendientes con partido pasado.)
+select cron.schedule(
+  'settle-bets', '15 */2 * * *',
+  $$
+  select net.http_post(
+    url     := 'https://<PROJECT_REF>.supabase.co/functions/v1/settle-bets',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'refresh_odds_service_key')
+    ),
+    body := jsonb_build_object(
+      'cron', true,
+      'secret', (select decrypted_secret from vault.decrypted_secrets where name = 'refresh_odds_cron_secret')
+    )
+  );
+  $$
+);

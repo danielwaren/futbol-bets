@@ -1,0 +1,99 @@
+import { useEffect, useState } from 'react'
+import { View } from 'react-native'
+import {
+  toDateInputValue,
+  useMatches,
+  useRefreshMatches,
+  usingMockOdds,
+  type League,
+} from '@futbolismo/core'
+import { Screen } from '@/components/Screen'
+import { DateLeagueBar } from '@/components/matches/DateLeagueBar'
+import { MatchCard } from '@/components/matches/MatchCard'
+import { AdSlot } from '@/components/AdSlot'
+import { BankrollSwitcher } from '@/components/bankroll/BankrollSwitcher'
+import { Button, EmptyState, ErrorText, Spinner, Txt } from '@/components/ui'
+import { useEntitlements } from '@/hooks/useEntitlements'
+import { usePaywall } from '@/context/PaywallContext'
+import { c } from '@/theme'
+
+export default function Matches() {
+  const entitlements = useEntitlements()
+  const { openPaywall } = usePaywall()
+  const allowed = entitlements.leagues
+  const allowedKey = allowed.join(',')
+
+  const [date, setDate] = useState(() => toDateInputValue(new Date()))
+  const [leagues, setLeagues] = useState<League[]>(allowed)
+
+  useEffect(() => {
+    setLeagues(allowed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowedKey])
+
+  const q = useMatches(leagues, date)
+  const refresh = useRefreshMatches(leagues)
+  const matches = q.data?.matches ?? []
+
+  return (
+    <Screen
+      title="Partidos"
+      subtitle="1X2 · Goles · Córners · BTTS"
+      onRefresh={() => q.refetch()}
+      refreshing={q.isFetching}
+      right={
+        !refresh.disabled ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            title="Actualizar"
+            loading={refresh.isPending}
+            onPress={() => refresh.mutate()}
+          />
+        ) : null
+      }
+    >
+      <BankrollSwitcher />
+
+      {usingMockOdds() && (
+        <View
+          style={{
+            backgroundColor: c.amberBg,
+            borderRadius: 12,
+            padding: 12,
+          }}
+        >
+          <Txt size={12} color={c.amber}>
+            Modo desarrollo (mock): partidos generados al azar.
+          </Txt>
+        </View>
+      )}
+
+      <DateLeagueBar
+        date={date}
+        leagues={leagues}
+        allowedLeagues={allowed}
+        onDateChange={setDate}
+        onLeaguesChange={setLeagues}
+        onLockedPress={() => openPaywall('Esa liga es del plan Premium.')}
+      />
+
+      <AdSlot />
+
+      {refresh.isError && <ErrorText error={refresh.error} />}
+
+      {q.isLoading ? (
+        <Spinner />
+      ) : q.isError ? (
+        <ErrorText error={q.error} />
+      ) : matches.length === 0 ? (
+        <EmptyState
+          title="No hay partidos para esta fecha"
+          hint="Prueba otra fecha o pulsa Actualizar. La API solo trae partidos próximos."
+        />
+      ) : (
+        matches.map((m) => <MatchCard key={m.id} match={m} />)
+      )}
+    </Screen>
+  )
+}

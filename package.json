@@ -1,0 +1,24 @@
+{
+  "name": "futbolismo",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "scripts": {
+    "web": "npm --workspace @futbolismo/web run dev",
+    "web:build": "npm --workspace @futbolismo/web run build",
+    "mobile": "npm --workspace @futbolismo/mobile run start",
+    "test": "npm --workspace @futbolismo/core run test",
+    "lint": "npm --workspace @futbolismo/web run lint"
+  }
+}

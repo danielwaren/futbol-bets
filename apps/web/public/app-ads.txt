@@ -1,0 +1,4 @@
+# Reemplaza pub-0000000000000000 por tu Publisher ID de AdMob
+# (AdMob > Settings > Publisher ID) y publica este archivo en la raíz del dominio
+# declarado como sitio de la app en Play Console.
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

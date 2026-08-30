@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Futbolismo",
+    "slug": "futbolismo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "futbolismo",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b1120",
+    "ios": {
+      "bundleIdentifier": "app.futbolismo",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "app.futbolismo",
+      "adaptiveIcon": {
+        "backgroundColor": "#0b1120",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0b1120",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 90
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {}
+    }
+  }
+}
