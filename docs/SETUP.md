@@ -14,6 +14,7 @@ Migraciones aplicadas (también versionadas en `supabase/migrations/`):
 | `0004_schedule_refresh_odds.sql.template` | **plantilla** — cron de refresh de cuotas + settle (ver §4) |
 | `0005_revenuecat_sync.sql` | tabla `subscription_events`; el cliente no puede tocar `plan` |
 | `0006_auto_settle.sql` | recálculo de banca en la BD (trigger `bets_recalc`) + resolución automática (`settled_by`, `result_detail`, `settle_runs`) |
+| `0007_free_league_choice.sql` | `profiles.free_leagues text[]` (el plan free elige 3 de 10 ligas); trigger de validación; `free_leagues(uid)`; `enforce_bet_plan` respeta la elección del usuario |
 
 ## 2. Google Sign-In
 

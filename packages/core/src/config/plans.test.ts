@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PLANS, leagueAllowed, planFor } from './plans'
+import { PLANS, leagueAllowed, leaguesForPlan, planFor } from './plans'
 
 describe('PLANS', () => {
   it('free tiene 3 ligas, 1 banca global, con ads', () => {
@@ -34,5 +34,33 @@ describe('leagueAllowed', () => {
   it('premium permite todas', () => {
     expect(leagueAllowed('premium', 'seriea')).toBe(true)
     expect(leagueAllowed('premium', 'argentina')).toBe(true)
+  })
+  it('free respeta la elección de 3 ligas del usuario', () => {
+    const picked = ['chile', 'seriea', 'brasileirao'] as const
+    expect(leagueAllowed('free', 'seriea', [...picked])).toBe(true)
+    expect(leagueAllowed('free', 'brasileirao', [...picked])).toBe(true)
+    // premier ya no está elegida => bloqueada
+    expect(leagueAllowed('free', 'premier', [...picked])).toBe(false)
+  })
+})
+
+describe('leaguesForPlan', () => {
+  it('free sin elección => trío por defecto', () => {
+    expect(leaguesForPlan('free')).toEqual(['chile', 'laliga', 'premier'])
+    expect(leaguesForPlan('free', null)).toEqual(['chile', 'laliga', 'premier'])
+  })
+  it('free con elección válida => esa elección', () => {
+    const picked = ['argentina', 'ligue1', 'eredivisie'] as const
+    expect(leaguesForPlan('free', [...picked])).toEqual([...picked])
+  })
+  it('free con elección incompleta => trío por defecto', () => {
+    expect(leaguesForPlan('free', ['chile', 'seriea'] as never)).toEqual([
+      'chile',
+      'laliga',
+      'premier',
+    ])
+  })
+  it('premium => siempre las 10', () => {
+    expect(leaguesForPlan('premium', ['chile', 'seriea', 'ligue1'] as never)).toHaveLength(10)
   })
 })

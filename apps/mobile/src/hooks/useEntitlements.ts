@@ -8,5 +8,9 @@ export type { Entitlements }
 
 export function useEntitlements(): Entitlements {
   const { data: profile, isLoading } = useProfile()
-  return deriveEntitlements(profile?.plan ?? 'free', isLoading)
+  return deriveEntitlements(
+    profile?.plan ?? 'free',
+    isLoading,
+    profile?.freeLeagues ?? null,
+  )
 }

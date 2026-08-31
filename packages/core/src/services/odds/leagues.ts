@@ -7,7 +7,11 @@ export interface LeagueMeta {
   sportKey: string
   /** color de acento (tailwind-ish hex) para badges */
   color: string
-  /** true = disponible en el plan free */
+  /** país (para el logo redondo del selector de ligas) */
+  country: string
+  /** emoji de bandera usado como "logo" redondo */
+  flag: string
+  /** true = forma parte del trío free por defecto (fallback si el usuario no eligió) */
   free: boolean
 }
 
@@ -18,6 +22,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Chile',
     sportKey: 'soccer_chile_campeonato',
     color: '#ef4444',
+    country: 'Chile',
+    flag: '🇨🇱',
     free: true,
   },
   laliga: {
@@ -26,6 +32,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'LaLiga',
     sportKey: 'soccer_spain_la_liga',
     color: '#f59e0b',
+    country: 'España',
+    flag: '🇪🇸',
     free: true,
   },
   premier: {
@@ -34,6 +42,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Premier',
     sportKey: 'soccer_epl',
     color: '#8b5cf6',
+    country: 'Inglaterra',
+    flag: '🇬🇧',
     free: true,
   },
   seriea: {
@@ -42,6 +52,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Serie A',
     sportKey: 'soccer_italy_serie_a',
     color: '#22d3ee',
+    country: 'Italia',
+    flag: '🇮🇹',
     free: false,
   },
   bundesliga: {
@@ -50,6 +62,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Bundesliga',
     sportKey: 'soccer_germany_bundesliga',
     color: '#f43f5e',
+    country: 'Alemania',
+    flag: '🇩🇪',
     free: false,
   },
   ligue1: {
@@ -58,6 +72,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Ligue 1',
     sportKey: 'soccer_france_ligue_one',
     color: '#38bdf8',
+    country: 'Francia',
+    flag: '🇫🇷',
     free: false,
   },
   primeira: {
@@ -66,6 +82,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Primeira',
     sportKey: 'soccer_portugal_primeira_liga',
     color: '#34d399',
+    country: 'Portugal',
+    flag: '🇵🇹',
     free: false,
   },
   eredivisie: {
@@ -74,6 +92,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Eredivisie',
     sportKey: 'soccer_netherlands_eredivisie',
     color: '#fb923c',
+    country: 'Países Bajos',
+    flag: '🇳🇱',
     free: false,
   },
   brasileirao: {
@@ -82,6 +102,8 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Brasil',
     sportKey: 'soccer_brazil_campeonato',
     color: '#a3e635',
+    country: 'Brasil',
+    flag: '🇧🇷',
     free: false,
   },
   argentina: {
@@ -90,13 +112,28 @@ export const LEAGUES: Record<League, LeagueMeta> = {
     shortLabel: 'Argentina',
     sportKey: 'soccer_argentina_primera_division',
     color: '#818cf8',
+    country: 'Argentina',
+    flag: '🇦🇷',
     free: false,
   },
 }
 
 export const LEAGUE_LIST: LeagueMeta[] = Object.values(LEAGUES)
-export const FREE_LEAGUE_IDS = LEAGUE_LIST.filter((l) => l.free).map((l) => l.id)
 export const ALL_LEAGUE_IDS = LEAGUE_LIST.map((l) => l.id)
+
+/** Nº de ligas que incluye el plan free (el usuario elige cuáles). */
+export const FREE_LEAGUE_SLOTS = 3
+
+/**
+ * Trío free por defecto: se usa como fallback mientras el usuario no haya
+ * elegido sus ligas. Debe coincidir con `public.default_free_leagues()` en la BD.
+ */
+export const DEFAULT_FREE_LEAGUE_IDS = LEAGUE_LIST.filter((l) => l.free).map(
+  (l) => l.id,
+)
+
+/** @deprecated El plan free ya no tiene ligas fijas. Usa `DEFAULT_FREE_LEAGUE_IDS`. */
+export const FREE_LEAGUE_IDS = DEFAULT_FREE_LEAGUE_IDS
 
 export function leagueFromSportKey(sportKey: string): League | null {
   const found = LEAGUE_LIST.find((l) => l.sportKey === sportKey)

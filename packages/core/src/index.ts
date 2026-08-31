@@ -22,5 +22,9 @@ export { mockOddsApi } from './services/odds/mockOddsApi'
 export * from './hooks/useBankroll'
 export * from './hooks/useBets'
 export * from './hooks/useMatches'
-export { useProfileQuery, type Profile } from './hooks/useProfile'
+export {
+  useProfileQuery,
+  useSetFreeLeagues,
+  type Profile,
+} from './hooks/useProfile'
 export { useEntitlements, type Entitlements } from './hooks/useEntitlements'

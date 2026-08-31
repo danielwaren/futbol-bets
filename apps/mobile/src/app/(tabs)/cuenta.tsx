@@ -3,11 +3,13 @@ import { Alert, Image, Pressable, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import {
   formatDateTime,
+  LEAGUES,
   PLAY_SUBSCRIPTIONS_URL,
   SITE,
   supabase,
 } from '@futbolismo/core'
 import { Screen } from '@/components/Screen'
+import { LeagueLogo } from '@/components/leagues/LeagueLogo'
 import { Button, Card, Txt, ErrorText } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/hooks/useProfile'
@@ -121,6 +123,38 @@ export default function Account() {
           </Txt>
         )}
       </Card>
+
+      {!entitlements.isPremium && (
+        <Card style={{ gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Txt weight="600" style={{ flex: 1 }}>
+              Mis ligas gratis
+            </Txt>
+            <Button
+              size="sm"
+              variant="secondary"
+              title="Cambiar"
+              onPress={() => router.push('/elegir-ligas')}
+            />
+          </View>
+          {entitlements.freeLeagues ? (
+            <View style={{ flexDirection: 'row', gap: 14 }}>
+              {entitlements.freeLeagues.map((id) => (
+                <View key={id} style={{ alignItems: 'center', gap: 4 }}>
+                  <LeagueLogo league={LEAGUES[id]} size={44} />
+                  <Txt size={10} faint>
+                    {LEAGUES[id].shortLabel}
+                  </Txt>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Txt size={12} faint>
+              Todavía no eliges tus 3 ligas.
+            </Txt>
+          )}
+        </Card>
+      )}
 
       <Card style={{ gap: 12 }}>
         <Pressable onPress={() => router.push('/privacidad')}>
