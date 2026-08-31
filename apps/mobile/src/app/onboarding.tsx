@@ -48,8 +48,11 @@ export default function Onboarding() {
 
   async function finish() {
     await markOnboardingSeen()
-    // El gate decide el destino real (/login sin sesión, tabs con sesión).
-    router.replace('/')
+    // Si se abrió a propósito (Cuenta → "Ver tutorial") volvemos a donde estaba;
+    // en el primer arranque no hay historial y el gate decide el destino real
+    // (/login sin sesión, tabs con sesión).
+    if (router.canGoBack()) router.back()
+    else router.replace('/')
   }
 
   function next() {

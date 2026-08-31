@@ -157,6 +157,9 @@ export default function Account() {
       )}
 
       <Card style={{ gap: 12 }}>
+        <Pressable onPress={() => router.push('/onboarding')}>
+          <Txt>Ver tutorial de nuevo</Txt>
+        </Pressable>
         <Pressable onPress={() => router.push('/privacidad')}>
           <Txt>Política de privacidad</Txt>
         </Pressable>

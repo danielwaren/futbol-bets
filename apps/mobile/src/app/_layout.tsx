@@ -59,11 +59,13 @@ function Gate() {
       return
     }
 
-    // Con sesión.
-    if (first === 'login' || first === 'onboarding') {
+    // Con sesión. Ojo: /onboarding NO rebota, porque con el flag ya marcado solo
+    // se llega ahí a propósito (Cuenta → "Ver tutorial").
+    if (first === 'login') {
       router.replace('/')
       return
     }
+    if (first === 'onboarding') return
     if (!entLoading && needsLeagueChoice && first !== 'elegir-ligas') {
       router.replace('/elegir-ligas')
     }
