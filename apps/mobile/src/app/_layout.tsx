@@ -1,7 +1,12 @@
 import '@/initCore'
 import { useEffect } from 'react'
-import { View } from 'react-native'
-import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router'
+import {
+  SplashScreen,
+  Stack,
+  useRootNavigationState,
+  useRouter,
+  useSegments,
+} from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -14,14 +19,13 @@ import { BankrollProvider } from '@/context/BankrollContext'
 import { BetFormProvider } from '@/context/BetFormContext'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { useOnboardingSeen } from '@/lib/onboarding'
-import { Spinner } from '@/components/ui'
 import { c } from '@/theme'
 
 SplashScreen.preventAutoHideAsync()
 
 // Rutas accesibles sin sesión.
 const PUBLIC = ['login', 'onboarding', 'privacidad', 'terminos', 'eliminar-cuenta']
-// Rutas que un usuario sin haber visto el onboarding sí puede abrir (deep links legales).
+// Rutas que se pueden abrir antes de completar el onboarding (deep links legales).
 const PRE_ONBOARDING_OK = ['onboarding', 'privacidad', 'terminos']
 
 function Gate() {
@@ -29,12 +33,17 @@ function Gate() {
   const { needsLeagueChoice, loading: entLoading } = useEntitlements()
   const segments = useSegments()
   const router = useRouter()
-
   const seenOnboarding = useOnboardingSeen()
+
+  // `<Stack>` se monta siempre (ver abajo), pero el navegador raíz no acepta
+  // acciones hasta que React Navigation lo registra. Sin esta guarda, los
+  // redirects de abajo se despachan al vacío ("action ... was not handled by
+  // any navigator") y la app se queda en la ruta inicial.
+  const navReady = Boolean(useRootNavigationState()?.key)
   const booting = loading || seenOnboarding === null
 
   useEffect(() => {
-    if (booting) return
+    if (!navReady || booting) return
     void SplashScreen.hideAsync()
     const first = (segments[0] ?? '') as string
 
@@ -59,6 +68,7 @@ function Gate() {
       router.replace('/elegir-ligas')
     }
   }, [
+    navReady,
     booting,
     session,
     seenOnboarding,
@@ -68,14 +78,8 @@ function Gate() {
     router,
   ])
 
-  if (booting) {
-    return (
-      <View style={{ flex: 1, backgroundColor: c.canvas, justifyContent: 'center' }}>
-        <Spinner />
-      </View>
-    )
-  }
-
+  // Nunca se desmonta: si el navegador raíz aparece y desaparece, expo-router
+  // pierde las acciones encoladas. Durante el arranque la splash lo tapa.
   return (
     <Stack
       screenOptions={{

@@ -75,16 +75,22 @@ export function BankrollProvider({ children }: { children: ReactNode }) {
       isLoading: query.isLoading,
       isError: query.isError,
       error: query.error,
+      // Sin userId la query está deshabilitada y `isLoading` es false, así que
+      // sin este guard el modal obligatorio de banca aparecía sin sesión.
       needsFirstBankroll:
-        !query.isLoading && !query.isError && bankrolls.length === 0,
+        Boolean(userId) &&
+        query.isSuccess &&
+        bankrolls.length === 0,
     }),
     [
+      userId,
       bankrolls,
       selected,
       selectBankroll,
       bankrollForLeague,
       query.isLoading,
       query.isError,
+      query.isSuccess,
       query.error,
     ],
   )
