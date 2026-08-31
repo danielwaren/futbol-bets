@@ -224,8 +224,25 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   )
 }
 
+/**
+ * Los errores de Supabase (PostgrestError, FunctionsError) son objetos planos,
+ * no instancias de Error: sin este mapeo se perdía el mensaje real.
+ */
+function messageOf(error: unknown): string {
+  if (!error) return 'Ocurrió un error.'
+  if (typeof error === 'string') return error
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object') {
+    const e = error as { message?: unknown; details?: unknown; hint?: unknown }
+    for (const v of [e.message, e.details, e.hint]) {
+      if (typeof v === 'string' && v.trim()) return v
+    }
+  }
+  return 'Ocurrió un error.'
+}
+
 export function ErrorText({ error }: { error: unknown }) {
-  const msg = error instanceof Error ? error.message : 'Ocurrió un error.'
+  const msg = messageOf(error)
   return (
     <View style={s.errorBox}>
       <Txt size={13} color={c.rose}>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -25,30 +25,17 @@ export default function ChooseLeagues() {
 
   const mandatory = entitlements.needsLeagueChoice
   const [picked, setPicked] = useState<League[]>(profile?.freeLeagues ?? [])
-  const [hint, setHint] = useState(false)
-
-  const full = picked.length >= FREE_LEAGUE_SLOTS
   const ready = picked.length === FREE_LEAGUE_SLOTS
 
+  /**
+   * Tocar una liga no elegida cuando ya hay 3 reemplaza a la más antigua (FIFO),
+   * así nunca hay un callejón sin salida donde nada responde.
+   */
   function toggle(id: League) {
-    setHint(false)
     setPicked((prev) => {
       if (prev.includes(id)) return prev.filter((l) => l !== id)
-      if (prev.length >= FREE_LEAGUE_SLOTS) {
-        setHint(true)
-        return prev
-      }
-      return [...prev, id]
-    })
-  }
-
-  function confirm() {
-    if (!ready) return
-    save.mutate(picked, {
-      onSuccess: () => {
-        if (mandatory) router.replace('/')
-        else router.back()
-      },
+      if (prev.length < FREE_LEAGUE_SLOTS) return [...prev, id]
+      return [...prev.slice(1), id]
     })
   }
 
@@ -62,7 +49,15 @@ export default function ChooseLeagues() {
 
   if (entitlements.isPremium) {
     return (
-      <View style={{ flex: 1, backgroundColor: c.canvas, padding: 24, paddingTop: insets.top + 40, gap: 16 }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: c.canvas,
+          padding: 24,
+          paddingTop: insets.top + 40,
+          gap: 16,
+        }}
+      >
         <Txt size={20} weight="700">
           Ya tienes las 10 ligas
         </Txt>
@@ -74,7 +69,7 @@ export default function ChooseLeagues() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.canvas, paddingTop: insets.top }}>
-      <View style={{ padding: 20, gap: 6 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, gap: 6 }}>
         <Txt size={22} weight="700">
           Elige tus {FREE_LEAGUE_SLOTS} ligas gratis
         </Txt>
@@ -84,7 +79,11 @@ export default function ChooseLeagues() {
         </Txt>
       </View>
 
-      <View style={{ flex: 1, paddingHorizontal: 16, gap: 12 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 12 }}
+        showsVerticalScrollIndicator={false}
+      >
         {rows.map((row, ri) => (
           <View key={ri} style={{ flexDirection: 'row', gap: 12 }}>
             {row.map((lg) => {
@@ -102,15 +101,9 @@ export default function ChooseLeagues() {
                     borderWidth: 1,
                     borderColor: selected ? c.sky : c.border,
                     backgroundColor: selected ? c.skyBg : c.card,
-                    opacity: !selected && full ? 0.55 : 1,
                   }}
                 >
-                  <LeagueLogo
-                    league={lg}
-                    size={52}
-                    selected={selected}
-                    locked={!selected && full}
-                  />
+                  <LeagueLogo league={lg} size={52} selected={selected} />
                   <Txt size={12} weight="600" center>
                     {lg.shortLabel}
                   </Txt>
@@ -123,7 +116,7 @@ export default function ChooseLeagues() {
             {row.length === 1 && <View style={{ flex: 1 }} />}
           </View>
         ))}
-      </View>
+      </ScrollView>
 
       <Card
         style={{
@@ -133,9 +126,9 @@ export default function ChooseLeagues() {
           borderColor: ready ? c.sky : c.border,
         }}
       >
-        {hint && (
-          <Txt size={12} color={c.amber}>
-            Ya elegiste {FREE_LEAGUE_SLOTS}. Deselecciona una para cambiarla.
+        {ready && (
+          <Txt size={11} faint>
+            Toca otra liga para cambiar tu selección.
           </Txt>
         )}
         {save.isError && <ErrorText error={save.error} />}
@@ -156,7 +149,15 @@ export default function ChooseLeagues() {
             size="sm"
             disabled={!ready}
             loading={save.isPending}
-            onPress={confirm}
+            onPress={() => {
+              if (!ready) return
+              save.mutate(picked, {
+                onSuccess: () => {
+                  if (mandatory) router.replace('/')
+                  else router.back()
+                },
+              })
+            }}
           />
         </View>
       </Card>

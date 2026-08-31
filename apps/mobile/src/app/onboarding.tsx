@@ -48,7 +48,8 @@ export default function Onboarding() {
 
   async function finish() {
     await markOnboardingSeen()
-    router.replace('/login')
+    // El gate decide el destino real (/login sin sesión, tabs con sesión).
+    router.replace('/')
   }
 
   function next() {

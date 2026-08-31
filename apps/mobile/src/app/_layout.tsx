@@ -1,5 +1,5 @@
 import '@/initCore'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { View } from 'react-native'
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -13,7 +13,7 @@ import { PaywallProvider } from '@/context/PaywallContext'
 import { BankrollProvider } from '@/context/BankrollContext'
 import { BetFormProvider } from '@/context/BetFormContext'
 import { useEntitlements } from '@/hooks/useEntitlements'
-import { hasSeenOnboarding } from '@/lib/onboarding'
+import { useOnboardingSeen } from '@/lib/onboarding'
 import { Spinner } from '@/components/ui'
 import { c } from '@/theme'
 
@@ -30,11 +30,7 @@ function Gate() {
   const segments = useSegments()
   const router = useRouter()
 
-  const [seenOnboarding, setSeenOnboarding] = useState<boolean | null>(null)
-  useEffect(() => {
-    hasSeenOnboarding().then(setSeenOnboarding)
-  }, [])
-
+  const seenOnboarding = useOnboardingSeen()
   const booting = loading || seenOnboarding === null
 
   useEffect(() => {
@@ -42,12 +38,15 @@ function Gate() {
     void SplashScreen.hideAsync()
     const first = (segments[0] ?? '') as string
 
+    // El onboarding va primero SIEMPRE en el primer arranque, aunque haya una
+    // sesión restaurada de una instalación anterior.
+    if (!seenOnboarding) {
+      if (!PRE_ONBOARDING_OK.includes(first)) router.replace('/onboarding')
+      return
+    }
+
     if (!session) {
-      if (!seenOnboarding && !PRE_ONBOARDING_OK.includes(first)) {
-        router.replace('/onboarding')
-      } else if (seenOnboarding && !PUBLIC.includes(first)) {
-        router.replace('/login')
-      }
+      if (!PUBLIC.includes(first)) router.replace('/login')
       return
     }
 

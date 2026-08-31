@@ -27,8 +27,10 @@ returns text[] language sql stable security definer set search_path = public as 
 $$;
 
 -- Validación: exactamente 3 ligas válidas y distintas, o NULL.
+-- SECURITY DEFINER obligatorio: el trigger corre como `authenticated`, que no
+-- tiene EXECUTE sobre all_leagues() (revocado en 0003).
 create or replace function public.validate_free_leagues()
-returns trigger language plpgsql set search_path = public as $$
+returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if new.free_leagues is not null then
     if coalesce(array_length(new.free_leagues, 1), 0) <> 3
