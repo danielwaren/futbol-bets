@@ -200,10 +200,10 @@ export function BetFormModal({
             padding: 10,
           }}
         >
-          <Txt weight="600">
+          <Txt variant="h2">
             {st.homeTeam} vs {st.awayTeam}
           </Txt>
-          <Txt size={12} faint>
+          <Txt variant="label" size={12}>
             {LEAGUES[st.league].label} · {formatDateTime(st.matchDate.toISOString())}
           </Txt>
         </View>
@@ -306,13 +306,13 @@ export function BetFormModal({
             <View
               style={{
                 borderWidth: 1,
-                borderColor: c.border2,
+                borderColor: c.line,
                 borderRadius: radius.md,
                 paddingHorizontal: 12,
                 paddingVertical: 10,
               }}
             >
-              <Txt weight="600" color={c.emerald}>
+              <Txt variant="h2" color={c.pitch}>
                 {formatCLP(potential)}
               </Txt>
             </View>

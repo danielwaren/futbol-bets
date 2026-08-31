@@ -72,7 +72,7 @@ export default function Account() {
                 width: 44,
                 height: 44,
                 borderRadius: 22,
-                backgroundColor: c.slate700,
+                backgroundColor: c.board3,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -81,8 +81,8 @@ export default function Account() {
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Txt weight="600">{profile?.displayName ?? 'Cuenta'}</Txt>
-            <Txt size={12} faint>
+            <Txt variant="h2">{profile?.displayName ?? 'Cuenta'}</Txt>
+            <Txt variant="label" size={12}>
               {profile?.email}
             </Txt>
           </View>
@@ -90,11 +90,11 @@ export default function Account() {
       </Card>
 
       <Card style={{ gap: 10 }}>
-        <Txt weight="600">
+        <Txt variant="h2">
           Plan {entitlements.plan === 'premium' ? 'Premium' : 'Free'}
         </Txt>
         {entitlements.plan === 'premium' && profile?.planExpiresAt && (
-          <Txt size={12} faint>
+          <Txt variant="label" size={12}>
             Renueva/expira el {formatDateTime(profile.planExpiresAt)}
           </Txt>
         )}
@@ -118,7 +118,7 @@ export default function Account() {
             />
           </View>
         ) : (
-          <Txt size={12} faint>
+          <Txt variant="label" size={12}>
             La suscripción se gestiona desde la app publicada en Google Play.
           </Txt>
         )}
@@ -127,13 +127,13 @@ export default function Account() {
       {!entitlements.isPremium && (
         <Card style={{ gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Txt weight="600" style={{ flex: 1 }}>
+            <Txt variant="h2" style={{ flex: 1 }}>
               Mis ligas gratis
             </Txt>
             <Button
               size="sm"
               variant="secondary"
-              title="Cambiar"
+              title="Ver"
               onPress={() => router.push('/elegir-ligas')}
             />
           </View>
@@ -142,17 +142,20 @@ export default function Account() {
               {entitlements.freeLeagues.map((id) => (
                 <View key={id} style={{ alignItems: 'center', gap: 4 }}>
                   <LeagueLogo league={LEAGUES[id]} size={44} />
-                  <Txt size={10} faint>
+                  <Txt variant="label" size={10}>
                     {LEAGUES[id].shortLabel}
                   </Txt>
                 </View>
               ))}
             </View>
           ) : (
-            <Txt size={12} faint>
+            <Txt variant="label" size={12}>
               Todavía no eliges tus 3 ligas.
             </Txt>
           )}
+          <Txt variant="label" size={9}>
+            Cambiar de ligas está incluido en Premium
+          </Txt>
         </Card>
       )}
 

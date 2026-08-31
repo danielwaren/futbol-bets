@@ -8,6 +8,17 @@ import {
   useSegments,
 } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import { useFonts } from 'expo-font'
+// Import por subruta a propósito: el índice del paquete reexporta TODOS los
+// pesos e itálicas, y Metro los empaqueta (≈1,5 MB de TTF que no usamos).
+import { Chivo_300Light } from '@expo-google-fonts/chivo/300Light'
+import { Chivo_400Regular } from '@expo-google-fonts/chivo/400Regular'
+import { Chivo_600SemiBold } from '@expo-google-fonts/chivo/600SemiBold'
+import { Chivo_700Bold } from '@expo-google-fonts/chivo/700Bold'
+import { Chivo_900Black } from '@expo-google-fonts/chivo/900Black'
+import { ChivoMono_400Regular } from '@expo-google-fonts/chivo-mono/400Regular'
+import { ChivoMono_500Medium } from '@expo-google-fonts/chivo-mono/500Medium'
+import { ChivoMono_700Bold } from '@expo-google-fonts/chivo-mono/700Bold'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -40,7 +51,21 @@ function Gate() {
   // redirects de abajo se despachan al vacío ("action ... was not handled by
   // any navigator") y la app se queda en la ruta inicial.
   const navReady = Boolean(useRootNavigationState()?.key)
-  const booting = loading || seenOnboarding === null
+
+  // Sin las fuentes cargadas la app se dibuja con la del sistema y salta al
+  // reemplazarla; esperamos con la splash puesta.
+  const [fontsReady] = useFonts({
+    Chivo_300Light,
+    Chivo_400Regular,
+    Chivo_600SemiBold,
+    Chivo_700Bold,
+    Chivo_900Black,
+    ChivoMono_400Regular,
+    ChivoMono_500Medium,
+    ChivoMono_700Bold,
+  })
+
+  const booting = loading || seenOnboarding === null || !fontsReady
 
   useEffect(() => {
     if (!navReady || booting) return
@@ -86,8 +111,8 @@ function Gate() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: c.canvas },
-        animation: 'fade',
+        contentStyle: { backgroundColor: c.night },
+        animation: 'slide_from_right',
       }}
     />
   )
@@ -95,7 +120,7 @@ function Gate() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: c.canvas }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: c.night }}>
       <SafeAreaProvider>
         <StatusBar style="light" />
         <QueryClientProvider client={queryClient}>

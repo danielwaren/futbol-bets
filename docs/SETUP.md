@@ -15,6 +15,21 @@ Migraciones aplicadas (también versionadas en `supabase/migrations/`):
 | `0005_revenuecat_sync.sql` | tabla `subscription_events`; el cliente no puede tocar `plan` |
 | `0006_auto_settle.sql` | recálculo de banca en la BD (trigger `bets_recalc`) + resolución automática (`settled_by`, `result_detail`, `settle_runs`) |
 | `0007_free_league_choice.sql` | `profiles.free_leagues text[]` (el plan free elige 3 de 10 ligas); trigger de validación; `free_leagues(uid)`; `enforce_bet_plan` respeta la elección del usuario |
+| `0008_standings.sql` | `standings_cache` + `standings_refresh_log` (tablas de posiciones cacheadas) |
+| `0009_lock_free_leagues.sql` | en plan free las 3 ligas se eligen una vez; cambiarlas es función premium |
+
+## 3-bis. Secret de API-Football (tablas de posiciones)
+
+Las posiciones vienen de [API-Football](https://dashboard.api-football.com) (plan gratis:
+100 requests/día; cubre las 10 ligas, **incluidas Chile y Argentina**). El pipeline consume
+~20 req/día.
+
+1. Crea una cuenta gratis en `dashboard.api-football.com` y copia tu API key.
+2. Dashboard de Supabase → Project Settings → Edge Functions → Secrets:
+   `API_FOOTBALL_KEY = <tu key>`
+3. En la app, pestaña **Tabla** → botón **Actualizar** llena la caché de esa liga.
+
+Sin la key la pantalla muestra un estado vacío; no rompe nada más.
 
 ## 2. Google Sign-In
 

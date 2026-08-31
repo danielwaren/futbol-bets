@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   FREE_LEAGUE_SLOTS,
@@ -9,11 +10,12 @@ import {
   type League,
 } from '@futbolismo/core'
 import { LeagueLogo } from '@/components/leagues/LeagueLogo'
-import { Button, Card, ErrorText, Txt } from '@/components/ui'
+import { Button, Card, ErrorText, Springy, Txt } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/hooks/useProfile'
 import { useEntitlements } from '@/hooks/useEntitlements'
-import { c, radius } from '@/theme'
+import { usePaywall } from '@/context/PaywallContext'
+import { c, motion, radius, shadow } from '@/theme'
 
 export default function ChooseLeagues() {
   const router = useRouter()
@@ -21,17 +23,19 @@ export default function ChooseLeagues() {
   const { userId } = useAuth()
   const { data: profile } = useProfile()
   const entitlements = useEntitlements()
+  const { openPaywall } = usePaywall()
   const save = useSetFreeLeagues(userId)
 
-  const mandatory = entitlements.needsLeagueChoice
+  const firstTime = entitlements.needsLeagueChoice
+  /** En free la elección es definitiva: cambiarla es función premium. */
+  const locked = !firstTime && !entitlements.isPremium
+
   const [picked, setPicked] = useState<League[]>(profile?.freeLeagues ?? [])
   const ready = picked.length === FREE_LEAGUE_SLOTS
 
-  /**
-   * Tocar una liga no elegida cuando ya hay 3 reemplaza a la más antigua (FIFO),
-   * así nunca hay un callejón sin salida donde nada responde.
-   */
+  /** Con 3 elegidas, tocar otra reemplaza la más antigua (nunca queda trabado). */
   function toggle(id: League) {
+    if (locked) return
     setPicked((prev) => {
       if (prev.includes(id)) return prev.filter((l) => l !== id)
       if (prev.length < FREE_LEAGUE_SLOTS) return [...prev, id]
@@ -41,126 +45,155 @@ export default function ChooseLeagues() {
 
   const rows = useMemo(() => {
     const out: (typeof LEAGUE_LIST)[] = []
-    for (let i = 0; i < LEAGUE_LIST.length; i += 2) {
-      out.push(LEAGUE_LIST.slice(i, i + 2))
-    }
+    for (let i = 0; i < LEAGUE_LIST.length; i += 2) out.push(LEAGUE_LIST.slice(i, i + 2))
     return out
   }, [])
 
-  if (entitlements.isPremium) {
+  if (entitlements.isPremium && !firstTime) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: c.canvas,
-          padding: 24,
-          paddingTop: insets.top + 40,
-          gap: 16,
-        }}
-      >
-        <Txt size={20} weight="700">
-          Ya tienes las 10 ligas
-        </Txt>
-        <Txt dim>Con Premium juegas todas las ligas sin elegir.</Txt>
+      <View style={[s.root, { paddingTop: insets.top + 40, padding: 24, gap: 16 }]}>
+        <Txt variant="screen">Tienes las 10 ligas</Txt>
+        <Txt variant="small">Con Premium juegas todas sin elegir.</Txt>
         <Button title="Volver" variant="secondary" onPress={() => router.back()} />
       </View>
     )
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.canvas, paddingTop: insets.top }}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, gap: 6 }}>
-        <Txt size={22} weight="700">
-          Elige tus {FREE_LEAGUE_SLOTS} ligas gratis
+    <View style={[s.root, { paddingTop: insets.top }]}>
+      <Animated.View entering={FadeInDown.duration(motion.enter)} style={s.head}>
+        <Txt variant="screen">
+          {locked ? 'Tus ligas' : `Elige tus ${FREE_LEAGUE_SLOTS} ligas`}
         </Txt>
-        <Txt size={13} dim>
-          Podrás apostar en estas {FREE_LEAGUE_SLOTS}. El resto quedan en Premium
-          {mandatory ? '' : ' — puedes cambiarlas cuando quieras'}.
+        <Txt variant="small" style={{ lineHeight: 19 }}>
+          {locked
+            ? 'Tu selección del plan gratis es definitiva. Con Premium juegas las 10 y las cambias cuando quieras.'
+            : `Podrás apostar en estas ${FREE_LEAGUE_SLOTS}. El resto quedan en Premium. `}
+          {!locked && (
+            <Txt variant="small" color={c.amber}>
+              Elige con calma: en el plan gratis no se pueden cambiar.
+            </Txt>
+          )}
         </Txt>
-      </View>
+      </Animated.View>
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 12 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 10 }}
         showsVerticalScrollIndicator={false}
       >
         {rows.map((row, ri) => (
-          <View key={ri} style={{ flexDirection: 'row', gap: 12 }}>
+          <Animated.View
+            key={ri}
+            entering={FadeInDown.delay(ri * motion.stagger).duration(motion.enter)}
+            style={{ flexDirection: 'row', gap: 10 }}
+          >
             {row.map((lg) => {
               const selected = picked.includes(lg.id)
               return (
-                <Pressable
+                <Springy
                   key={lg.id}
                   onPress={() => toggle(lg.id)}
-                  style={{
-                    flex: 1,
-                    alignItems: 'center',
-                    gap: 8,
-                    paddingVertical: 14,
-                    borderRadius: radius.lg,
-                    borderWidth: 1,
-                    borderColor: selected ? c.sky : c.border,
-                    backgroundColor: selected ? c.skyBg : c.card,
-                  }}
+                  disabled={locked}
+                  scaleTo={0.95}
+                  style={{ flex: 1 }}
                 >
-                  <LeagueLogo league={lg} size={52} selected={selected} />
-                  <Txt size={12} weight="600" center>
-                    {lg.shortLabel}
-                  </Txt>
-                  <Txt size={10} color={selected ? c.sky : c.textFaint}>
-                    {selected ? 'Gratis' : 'Premium'}
-                  </Txt>
-                </Pressable>
+                  <View
+                    style={[
+                      s.tile,
+                      shadow.card,
+                      selected && { backgroundColor: c.amberSoft },
+                      locked && !selected && { opacity: 0.45 },
+                    ]}
+                  >
+                    <LeagueLogo
+                      league={lg}
+                      size={50}
+                      selected={selected}
+                      locked={locked && !selected}
+                    />
+                    <Txt variant="h2" size={12.5} center numberOfLines={1}>
+                      {lg.shortLabel}
+                    </Txt>
+                    <Txt variant="label" size={8.5} color={selected ? c.amber : c.inkFaint}>
+                      {selected ? 'Gratis' : 'Premium'}
+                    </Txt>
+                  </View>
+                </Springy>
               )
             })}
             {row.length === 1 && <View style={{ flex: 1 }} />}
-          </View>
+          </Animated.View>
         ))}
       </ScrollView>
 
-      <Card
-        style={{
-          margin: 16,
-          marginBottom: insets.bottom + 12,
-          gap: 10,
-          borderColor: ready ? c.sky : c.border,
-        }}
-      >
-        {ready && (
-          <Txt size={11} faint>
-            Toca otra liga para cambiar tu selección.
-          </Txt>
-        )}
+      <Card style={[s.foot, { marginBottom: insets.bottom + 12 }]}>
         {save.isError && <ErrorText error={save.error} />}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Txt weight="700" size={15} style={{ flex: 1 }}>
-            {picked.length} / {FREE_LEAGUE_SLOTS}
-          </Txt>
-          {!mandatory && (
-            <Button
-              title="Cancelar"
-              variant="ghost"
-              size="sm"
-              onPress={() => router.back()}
-            />
-          )}
+
+        {locked ? (
           <Button
-            title="Confirmar"
-            size="sm"
-            disabled={!ready}
-            loading={save.isPending}
-            onPress={() => {
-              if (!ready) return
-              save.mutate(picked, {
-                onSuccess: () => {
-                  if (mandatory) router.replace('/')
-                  else router.back()
-                },
-              })
-            }}
+            title="Cambiar ligas con Premium"
+            onPress={() => openPaywall('Cambiar de ligas está incluido en Premium.')}
           />
-        </View>
+        ) : (
+          <>
+            {ready && (
+              <Txt variant="label" size={9}>
+                Toca otra liga para cambiar tu selección
+              </Txt>
+            )}
+            <View style={s.footRow}>
+              <Txt variant="data" size={15} style={{ flex: 1 }}>
+                {picked.length} / {FREE_LEAGUE_SLOTS}
+              </Txt>
+              {!firstTime && (
+                <Button
+                  title="Cancelar"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => router.back()}
+                />
+              )}
+              <Button
+                title="Confirmar"
+                size="sm"
+                disabled={!ready}
+                loading={save.isPending}
+                onPress={() => {
+                  if (!ready) return
+                  save.mutate(picked, {
+                    onSuccess: () => {
+                      if (firstTime) router.replace('/')
+                      else router.back()
+                    },
+                  })
+                }}
+              />
+            </View>
+          </>
+        )}
       </Card>
+
+      {locked && (
+        <View style={{ position: 'absolute', top: insets.top + 8, right: 16 }}>
+          <Button title="Volver" variant="ghost" size="sm" onPress={() => router.back()} />
+        </View>
+      )}
     </View>
   )
 }
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: c.night },
+  head: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 14, gap: 7 },
+  tile: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 14,
+    borderRadius: radius.lg,
+    backgroundColor: c.board,
+  },
+  foot: { marginHorizontal: 16, gap: 10 },
+  footRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+})

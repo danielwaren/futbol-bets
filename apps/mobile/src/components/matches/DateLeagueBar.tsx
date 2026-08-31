@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import {
   addDays,
@@ -9,8 +9,8 @@ import {
   toDateInputValue,
   type League,
 } from '@futbolismo/core'
-import { Card, Txt } from '@/components/ui'
-import { c, radius } from '@/theme'
+import { Card, Chip, Springy, Txt } from '@/components/ui'
+import { c, leagueColor, radius } from '@/theme'
 
 export function DateLeagueBar({
   date,
@@ -37,16 +37,18 @@ export function DateLeagueBar({
   }
 
   return (
-    <Card style={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+    <Card style={{ gap: 11, paddingBottom: 11 }}>
+      <View style={s.nav}>
         <Nav label="‹" onPress={() => onDateChange(addDays(date, -1))} />
-        <Pressable onPress={() => setShowPicker(true)} style={{ flex: 1, alignItems: 'center' }}>
-          <Txt weight="600" style={{ textTransform: 'capitalize' }}>
-            {formatMatchDate(`${date}T12:00:00`)}
-          </Txt>
-        </Pressable>
+        <Springy onPress={() => setShowPicker(true)} style={{ flex: 1 }}>
+          <View style={{ alignItems: 'center' }}>
+            <Txt variant="h2" size={15} style={{ textTransform: 'capitalize' }}>
+              {formatMatchDate(`${date}T12:00:00`)}
+            </Txt>
+          </View>
+        </Springy>
         <Nav label="›" onPress={() => onDateChange(addDays(date, 1))} />
-        <Nav label="Hoy" onPress={() => onDateChange(toDateInputValue(new Date()))} wide />
+        <Nav label="HOY" onPress={() => onDateChange(toDateInputValue(new Date()))} wide />
       </View>
 
       {showPicker && (
@@ -60,24 +62,32 @@ export function DateLeagueBar({
         />
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-        <Chip active={allSelected} onPress={() => onLeaguesChange(allowedLeagues)}>
-          Todas
-        </Chip>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 7, paddingRight: 8 }}
+      >
+        <Chip
+          label="Todas"
+          active={allSelected}
+          onPress={() => onLeaguesChange(allowedLeagues)}
+        />
         {allowedLeagues.map((id) => (
           <Chip
             key={id}
+            label={LEAGUES[id].shortLabel}
             active={!allSelected && leagues.includes(id)}
-            color={LEAGUES[id].color}
+            color={leagueColor[id]}
             onPress={() => select(id)}
-          >
-            {LEAGUES[id].shortLabel}
-          </Chip>
+          />
         ))}
         {locked.map((l) => (
-          <Chip key={l.id} locked onPress={onLockedPress}>
-            🔒 {l.shortLabel}
-          </Chip>
+          <Chip
+            key={l.id}
+            label={`🔒 ${l.shortLabel}`}
+            locked
+            onPress={onLockedPress}
+          />
         ))}
       </ScrollView>
     </Card>
@@ -94,48 +104,24 @@ function Nav({
   wide?: boolean
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        backgroundColor: c.slate700,
-        borderRadius: radius.md,
-        paddingVertical: 6,
-        paddingHorizontal: wide ? 12 : 10,
-      }}
-    >
-      <Txt size={13}>{label}</Txt>
-    </Pressable>
+    <Springy onPress={onPress} scaleTo={0.9}>
+      <View style={[s.navBtn, wide && { paddingHorizontal: 12 }]}>
+        <Txt variant="label" size={11} color={c.inkDim}>
+          {label}
+        </Txt>
+      </View>
+    </Springy>
   )
 }
 
-function Chip({
-  children,
-  active,
-  locked,
-  color,
-  onPress,
-}: {
-  children: React.ReactNode
-  active?: boolean
-  locked?: boolean
-  color?: string
-  onPress: () => void
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        borderWidth: 1,
-        borderColor: locked ? c.slate800 : active ? color ?? c.sky : c.border2,
-        backgroundColor: active ? c.skyBg : 'transparent',
-        borderRadius: radius.pill,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-      }}
-    >
-      <Txt size={12} color={locked ? c.textFainter : active ? color ?? c.sky : c.textDim}>
-        {children}
-      </Txt>
-    </Pressable>
-  )
-}
+const s = StyleSheet.create({
+  nav: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  navBtn: {
+    backgroundColor: c.board3,
+    borderRadius: radius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 11,
+    minWidth: 34,
+    alignItems: 'center',
+  },
+})

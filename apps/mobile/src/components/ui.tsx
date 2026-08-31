@@ -8,42 +8,50 @@ import {
   Text,
   TextInput,
   View,
+  type StyleProp,
   type TextInputProps,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
+import Animated, {
+  FadeIn,
+  SlideInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { c, radius, space } from '@/theme'
+import { c, family, motion, radius, shadow, space, type } from '@/theme'
+
+/* ------------------------------------------------------------------ texto */
+
+type TxtVariant = keyof typeof type
 
 export function Txt({
   children,
-  style,
-  dim,
-  faint,
-  size,
-  weight,
+  variant = 'body',
   color,
+  size,
   center,
+  style,
   numberOfLines,
 }: {
   children: ReactNode
-  style?: object
-  dim?: boolean
-  faint?: boolean
-  size?: number
-  weight?: '400' | '500' | '600' | '700'
+  variant?: TxtVariant
   color?: string
+  size?: number
   center?: boolean
+  style?: StyleProp<TextStyle>
   numberOfLines?: number
 }) {
   return (
     <Text
       numberOfLines={numberOfLines}
       style={[
-        {
-          color: color ?? (faint ? c.textFaint : dim ? c.textDim : c.text),
-          fontSize: size ?? 14,
-          fontWeight: weight ?? '400',
-          textAlign: center ? 'center' : 'auto',
-        },
+        type[variant],
+        color ? { color } : null,
+        size ? { fontSize: size } : null,
+        center ? { textAlign: 'center' } : null,
         style,
       ]}
     >
@@ -52,23 +60,69 @@ export function Txt({
   )
 }
 
+/* ------------------------------------------------------------------ card */
+
 export function Card({
   children,
   style,
+  flat = false,
 }: {
   children: ReactNode
-  style?: object
+  style?: StyleProp<ViewStyle>
+  flat?: boolean
 }) {
-  return <View style={[s.card, style]}>{children}</View>
+  return (
+    <View style={[s.card, !flat && shadow.card, style]}>{children}</View>
+  )
 }
 
+/* ---------------------------------------------------------------- pressable */
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
+/** Pressable con resorte: el gesto más repetido de la app debe sentirse rico. */
+export function Springy({
+  children,
+  onPress,
+  disabled,
+  scaleTo = 0.94,
+  style,
+}: {
+  children: ReactNode
+  onPress?: () => void
+  disabled?: boolean
+  scaleTo?: number
+  style?: StyleProp<ViewStyle>
+}) {
+  const sv = useSharedValue(1)
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: sv.value }] }))
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      disabled={disabled}
+      onPressIn={() => {
+        sv.value = withSpring(scaleTo, motion.spring)
+      }}
+      onPressOut={() => {
+        sv.value = withSpring(1, motion.spring)
+      }}
+      style={[style, anim]}
+    >
+      {children}
+    </AnimatedPressable>
+  )
+}
+
+/* ---------------------------------------------------------------- botones */
+
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
+
 const BTN: Record<Variant, { bg: string; fg: string; border?: string }> = {
-  primary: { bg: c.sky, fg: '#04121f' },
-  secondary: { bg: c.slate700, fg: c.text },
-  ghost: { bg: 'transparent', fg: c.textDim, border: c.border2 },
-  danger: { bg: c.rose, fg: '#2b0a12', border: undefined },
-  success: { bg: c.emerald, fg: '#04231a' },
+  primary: { bg: c.amber, fg: c.amberInk },
+  secondary: { bg: c.board3, fg: c.ink },
+  ghost: { bg: 'transparent', fg: c.inkDim, border: c.line },
+  danger: { bg: c.flag, fg: '#2B0A0A' },
+  success: { bg: c.pitch, fg: '#04231A' },
 }
 
 export function Button({
@@ -87,46 +141,49 @@ export function Button({
   size?: 'sm' | 'md'
   loading?: boolean
   disabled?: boolean
-  style?: object
+  style?: StyleProp<ViewStyle>
   left?: ReactNode
 }) {
   const v = BTN[variant]
-  const isOff = disabled || loading
+  const off = disabled || loading
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={isOff}
-      style={({ pressed }) => [
-        s.btn,
-        size === 'sm' && s.btnSm,
-        {
-          backgroundColor: v.bg,
-          borderColor: v.border ?? 'transparent',
-          borderWidth: v.border ? 1 : 0,
-          opacity: isOff ? 0.5 : pressed ? 0.85 : 1,
-        },
-        style,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator color={v.fg} size="small" />
-      ) : (
-        <>
-          {left}
-          <Text
-            style={{
-              color: v.fg,
-              fontWeight: '600',
-              fontSize: size === 'sm' ? 12 : 14,
-            }}
-          >
-            {title}
-          </Text>
-        </>
-      )}
-    </Pressable>
+    <Springy onPress={onPress} disabled={off} scaleTo={0.96} style={style}>
+      <View
+        style={[
+          s.btn,
+          size === 'sm' && s.btnSm,
+          {
+            backgroundColor: v.bg,
+            borderColor: v.border ?? 'transparent',
+            borderWidth: v.border ? 1 : 0,
+            opacity: off ? 0.45 : 1,
+          },
+          variant === 'primary' && !off ? shadow.card : null,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={v.fg} size="small" />
+        ) : (
+          <>
+            {left}
+            <Text
+              style={{
+                fontFamily: family.bold,
+                color: v.fg,
+                fontSize: size === 'sm' ? 12.5 : 14.5,
+                letterSpacing: 0.2,
+              }}
+            >
+              {title}
+            </Text>
+          </>
+        )}
+      </View>
+    </Springy>
   )
 }
+
+/* ------------------------------------------------------------------ campos */
 
 export function Field({
   label,
@@ -138,19 +195,11 @@ export function Field({
   children: ReactNode
 }) {
   return (
-    <View style={{ gap: 4 }}>
+    <View style={{ gap: 6 }}>
       {(label || hint) && (
-        <View style={s.row}>
-          {label && (
-            <Txt size={11} weight="500" dim>
-              {label}
-            </Txt>
-          )}
-          {hint && (
-            <Txt size={11} faint>
-              {hint}
-            </Txt>
-          )}
+        <View style={s.rowBetween}>
+          {label ? <Txt variant="label">{label}</Txt> : <View />}
+          {hint ? <Txt variant="dataSm">{hint}</Txt> : null}
         </View>
       )}
       {children}
@@ -161,13 +210,14 @@ export function Field({
 export function Input(props: TextInputProps) {
   return (
     <TextInput
-      placeholderTextColor={c.textFaint}
+      placeholderTextColor={c.inkFaint}
       {...props}
       style={[s.input, props.style]}
     />
   )
 }
 
+/** Chips horizontales. El activo se rellena de ámbar (= tocable). */
 export function Select<T extends string>({
   value,
   options,
@@ -181,46 +231,81 @@ export function Select<T extends string>({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 6 }}
+      contentContainerStyle={{ gap: 7, paddingRight: 8 }}
     >
-      {options.map((o) => {
-        const active = o.value === value
-        return (
-          <Pressable
-            key={o.value}
-            onPress={() => onChange(o.value)}
-            style={[s.chip, active && s.chipActive]}
-          >
-            <Txt size={12} color={active ? c.sky : c.textDim}>
-              {o.label}
-            </Txt>
-          </Pressable>
-        )
-      })}
+      {options.map((o) => (
+        <Chip
+          key={o.value}
+          label={o.label}
+          active={o.value === value}
+          onPress={() => onChange(o.value)}
+        />
+      ))}
     </ScrollView>
   )
 }
 
+export function Chip({
+  label,
+  active,
+  locked,
+  color,
+  onPress,
+}: {
+  label: string
+  active?: boolean
+  locked?: boolean
+  color?: string
+  onPress?: () => void
+}) {
+  const tint = color ?? c.amber
+  return (
+    <Springy onPress={onPress} scaleTo={0.93}>
+      <View
+        style={[
+          s.chip,
+          active && { backgroundColor: tint, borderColor: tint },
+          locked && { opacity: 0.42 },
+        ]}
+      >
+        <Text
+          style={{
+            fontFamily: active ? family.monoBold : family.monoMed,
+            fontSize: 11,
+            letterSpacing: 0.8,
+            textTransform: 'uppercase',
+            color: active ? c.night : c.inkFaint,
+          }}
+        >
+          {label}
+        </Text>
+      </View>
+    </Springy>
+  )
+}
+
+/* ------------------------------------------------------------------ estado */
+
 export function Spinner() {
   return (
-    <View style={{ paddingVertical: space(8), alignItems: 'center' }}>
-      <ActivityIndicator color={c.sky} />
+    <View style={{ paddingVertical: space(9), alignItems: 'center' }}>
+      <ActivityIndicator color={c.amber} />
     </View>
   )
 }
 
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
-    <View style={s.empty}>
-      <Txt weight="600" center>
+    <Animated.View entering={FadeIn.duration(motion.enter)} style={s.empty}>
+      <Txt variant="h2" center>
         {title}
       </Txt>
-      {hint && (
-        <Txt size={12} faint center style={{ marginTop: 4 }}>
+      {hint ? (
+        <Txt variant="small" center color={c.inkFaint} style={{ marginTop: 6 }}>
           {hint}
         </Txt>
-      )}
-    </View>
+      ) : null}
+    </Animated.View>
   )
 }
 
@@ -242,15 +327,16 @@ function messageOf(error: unknown): string {
 }
 
 export function ErrorText({ error }: { error: unknown }) {
-  const msg = messageOf(error)
   return (
-    <View style={s.errorBox}>
-      <Txt size={13} color={c.rose}>
-        {msg}
+    <Animated.View entering={FadeIn.duration(motion.quick)} style={s.errorBox}>
+      <Txt variant="small" color={c.flag}>
+        {messageOf(error)}
       </Txt>
-    </View>
+    </Animated.View>
   )
 }
+
+/* ------------------------------------------------------------------- sheet */
 
 export function Sheet({
   open,
@@ -270,43 +356,54 @@ export function Sheet({
     <RNModal
       visible={open}
       transparent
-      animationType="slide"
+      animationType="none"
+      statusBarTranslucent
       onRequestClose={() => dismissable && onClose()}
     >
-      <Pressable
-        style={s.backdrop}
-        onPress={() => dismissable && onClose()}
-      />
-      <View style={[s.sheet, { paddingBottom: insets.bottom + 16 }]}>
-        <View style={s.sheetHandle} />
-        <View style={s.sheetHead}>
-          <Txt weight="700" size={16}>
-            {title}
-          </Txt>
-          {dismissable && (
-            <Pressable onPress={onClose} hitSlop={12}>
-              <Txt size={20} dim>
-                ✕
-              </Txt>
-            </Pressable>
-          )}
-        </View>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 16, gap: 14 }}
+      {open && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]}
         >
-          {children}
-        </ScrollView>
-      </View>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => dismissable && onClose()}
+          />
+        </Animated.View>
+      )}
+      {open && (
+        <Animated.View
+          entering={SlideInDown.springify().damping(20).stiffness(180)}
+          style={[s.sheet, shadow.sheet, { paddingBottom: insets.bottom + 16 }]}
+        >
+          <View style={s.handle} />
+          <View style={s.sheetHead}>
+            <Txt variant="h2">{title}</Txt>
+            {dismissable && (
+              <Pressable onPress={onClose} hitSlop={14}>
+                <Txt variant="h2" color={c.inkFaint}>
+                  ✕
+                </Txt>
+              </Pressable>
+            )}
+          </View>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: 16, gap: 15 }}
+          >
+            {children}
+          </ScrollView>
+        </Animated.View>
+      )}
     </RNModal>
   )
 }
 
+/* ------------------------------------------------------------------ estilos */
+
 const s = StyleSheet.create({
   card: {
-    backgroundColor: c.card,
-    borderColor: c.border,
-    borderWidth: 1,
+    backgroundColor: c.board,
     borderRadius: radius.lg,
     padding: 14,
   },
@@ -316,73 +413,74 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     borderRadius: radius.md,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 18,
   },
-  btnSm: { paddingVertical: 8, paddingHorizontal: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  btnSm: { paddingVertical: 9, paddingHorizontal: 13 },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   input: {
     borderWidth: 1,
-    borderColor: c.border2,
-    backgroundColor: 'rgba(30,41,59,0.6)',
+    borderColor: c.line,
+    backgroundColor: c.board2,
     borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: c.text,
-    fontSize: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    color: c.ink,
+    fontFamily: family.body,
+    fontSize: 14.5,
   },
   chip: {
     borderWidth: 1,
-    borderColor: c.border2,
+    borderColor: c.line,
     borderRadius: radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
   },
-  chipActive: { borderColor: c.sky, backgroundColor: c.skyBg },
   empty: {
     borderWidth: 1,
-    borderColor: c.border2,
+    borderColor: c.line,
     borderStyle: 'dashed',
     borderRadius: radius.lg,
-    paddingVertical: 40,
+    paddingVertical: 42,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
   errorBox: {
-    borderWidth: 1,
-    borderColor: 'rgba(159,18,57,0.6)',
-    backgroundColor: 'rgba(76,5,25,0.4)',
-    borderRadius: radius.md,
+    borderLeftWidth: 2.5,
+    borderLeftColor: c.flag,
+    backgroundColor: c.flagSoft,
+    borderRadius: radius.sm,
     padding: 12,
   },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2,6,23,0.7)' },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     maxHeight: '90%',
-    backgroundColor: c.surface,
+    backgroundColor: c.board,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: c.border2,
   },
-  sheetHandle: {
+  handle: {
     alignSelf: 'center',
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: c.border2,
-    marginTop: 8,
+    backgroundColor: c.line,
+    marginTop: 10,
   },
   sheetHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: c.border,
+    borderBottomColor: c.lineSoft,
   },
 })

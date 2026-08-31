@@ -12,16 +12,19 @@ export { cn } from './utils/cn'
 
 export * from './config/plans'
 export * from './config/site'
+export * from './config/clubs'
 
 export * from './services/bankroll'
 export * from './services/bets'
 export * from './services/matchCache'
+export * from './services/standings'
 export * from './services/odds'
 export { mockOddsApi } from './services/odds/mockOddsApi'
 
 export * from './hooks/useBankroll'
 export * from './hooks/useBets'
 export * from './hooks/useMatches'
+export * from './hooks/useStandings'
 export {
   useProfileQuery,
   useSetFreeLeagues,

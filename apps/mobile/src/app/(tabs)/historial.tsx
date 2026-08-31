@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import {
   computeStats,
   formatCLP,
@@ -14,13 +15,21 @@ import {
 } from '@futbolismo/core'
 import { Screen } from '@/components/Screen'
 import { BetCard } from '@/components/bets/BetCard'
-import { Button, Card, EmptyState, ErrorText, Select, Spinner, Txt } from '@/components/ui'
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorText,
+  Select,
+  Spinner,
+  Txt,
+} from '@/components/ui'
 import { useBankrollContext } from '@/context/BankrollContext'
 import { useBetForm } from '@/context/BetFormContext'
-import { c } from '@/theme'
+import { c, motion, radius } from '@/theme'
 
 const STATUS: { value: BetStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'Todos' },
+  { value: 'all', label: 'Todas' },
   { value: 'pending', label: 'Pendientes' },
   { value: 'won', label: 'Ganadas' },
   { value: 'lost', label: 'Perdidas' },
@@ -66,7 +75,12 @@ export default function History() {
       onRefresh={() => q.refetch()}
       refreshing={q.isFetching}
       right={
-        <Button size="sm" title="+ Manual" onPress={() => openNew()} disabled={!bankroll} />
+        <Button
+          size="sm"
+          title="+ Manual"
+          onPress={() => openNew()}
+          disabled={!bankroll}
+        />
       }
     >
       {!usingMockOdds() && awaiting > 0 && (
@@ -79,17 +93,27 @@ export default function History() {
         />
       )}
       {settleAll.data && (
-        <Txt size={12} color={c.sky}>
-          {settleAll.data.settled > 0
-            ? `${settleAll.data.settled} resueltas automáticamente.`
-            : 'Sin resultados finales aún.'}
-        </Txt>
+        <View style={{ backgroundColor: c.amberSoft, borderRadius: radius.md, padding: 11 }}>
+          <Txt variant="dataSm" color={c.amber}>
+            {settleAll.data.settled > 0
+              ? `${settleAll.data.settled} resueltas automáticamente.`
+              : 'Sin resultados finales aún.'}
+          </Txt>
+        </View>
       )}
 
       <Card>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Stat label="P&L" value={formatSignedCLP(stats.pnl)} tone={stats.pnl >= 0 ? 'pos' : 'neg'} />
-          <Stat label="ROI" value={formatPercent(stats.roi)} tone={stats.roi >= 0 ? 'pos' : 'neg'} />
+        <View style={s.row}>
+          <Stat
+            label="P&L"
+            value={formatSignedCLP(stats.pnl)}
+            tone={stats.pnl >= 0 ? 'pos' : 'neg'}
+          />
+          <Stat
+            label="ROI"
+            value={formatPercent(stats.roi)}
+            tone={stats.roi >= 0 ? 'pos' : 'neg'}
+          />
           <Stat label="Apostado" value={formatCLP(stats.staked)} />
         </View>
       </Card>
@@ -113,11 +137,22 @@ export default function History() {
       ) : q.isError ? (
         <ErrorText error={q.error} />
       ) : filtered.length === 0 ? (
-        <EmptyState
-          title={all.length === 0 ? 'Todavía no registras apuestas' : 'Nada con esos filtros'}
-        />
+        <Animated.View entering={FadeInDown.duration(motion.enter)}>
+          <EmptyState
+            title={
+              all.length === 0
+                ? 'Todavía no registras apuestas'
+                : 'Nada con esos filtros'
+            }
+            hint={
+              all.length === 0
+                ? 'Toca una cuota en Partidos para registrar la primera.'
+                : undefined
+            }
+          />
+        </Animated.View>
       ) : (
-        filtered.map((b) => <BetCard key={b.id} bet={b} />)
+        filtered.map((b, i) => <BetCard key={b.id} bet={b} index={i} />)
       )}
     </Screen>
   )
@@ -133,13 +168,21 @@ function Stat({
   tone?: 'pos' | 'neg'
 }) {
   return (
-    <View style={{ flex: 1 }}>
-      <Txt size={10} faint>
-        {label.toUpperCase()}
+    <View style={{ flex: 1, gap: 2 }}>
+      <Txt variant="label" size={9}>
+        {label}
       </Txt>
-      <Txt weight="600" color={tone === 'pos' ? c.emerald : tone === 'neg' ? c.rose : c.text}>
+      <Txt
+        variant="data"
+        size={14}
+        color={tone === 'pos' ? c.pitch : tone === 'neg' ? c.flag : c.ink}
+      >
         {value}
       </Txt>
     </View>
   )
 }
+
+const s = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 12 },
+})

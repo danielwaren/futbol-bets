@@ -6,13 +6,13 @@ import { openExternal } from '@/lib/external'
 export default function Terms() {
   return (
     <Screen title="Términos de uso">
-      <Txt dim>
+      <Txt variant="small">
         {SITE.appName} es una herramienta de registro y análisis con{' '}
-        <Txt weight="600">dinero ficticio</Txt>. No es una casa de apuestas, no
+        <Txt variant="h2">dinero ficticio</Txt>. No es una casa de apuestas, no
         permite apostar dinero real y no enlaza a operadores de juego. Debes ser
         mayor de {SITE.minAge} años.
       </Txt>
-      <Txt size={12} faint>
+      <Txt variant="label" size={12}>
         Premium se cobra por Google Play y se renueva automáticamente salvo que lo
         canceles con 24 h de antelación desde Google Play → Pagos y suscripciones.
         La app se ofrece “tal cual”, sin garantías sobre la exactitud de las
@@ -23,7 +23,7 @@ export default function Terms() {
         variant="secondary"
         onPress={() => openExternal(`${SITE.url}/terminos`)}
       />
-      <Txt size={11} faint>
+      <Txt variant="label" size={11}>
         Contacto: {SITE.supportEmail}
       </Txt>
     </Screen>

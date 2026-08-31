@@ -37,7 +37,7 @@ export function PaywallScreen({
   return (
     <Sheet open={open} onClose={onClose} title="Futbolismo Premium">
       {reason && (
-        <View style={{ backgroundColor: c.amberBg, borderRadius: radius.md, padding: 10 }}>
+        <View style={{ backgroundColor: c.amberSoft, borderRadius: radius.md, padding: 10 }}>
           <Txt size={12} color={c.amber}>
             {reason}
           </Txt>
@@ -47,25 +47,25 @@ export function PaywallScreen({
       <View style={{ gap: 8 }}>
         {PERKS.map((p) => (
           <View key={p} style={{ flexDirection: 'row', gap: 8 }}>
-            <Txt color={c.emerald}>✓</Txt>
+            <Txt color={c.pitch}>✓</Txt>
             <Txt style={{ flex: 1 }}>{p}</Txt>
           </View>
         ))}
       </View>
 
       {alreadyPremium ? (
-        <View style={{ backgroundColor: c.emeraldBg, borderRadius: radius.md, padding: 10 }}>
-          <Txt color={c.emerald}>Ya tienes Premium activo. ¡Gracias!</Txt>
+        <View style={{ backgroundColor: c.pitchSoft, borderRadius: radius.md, padding: 10 }}>
+          <Txt color={c.pitch}>Ya tienes Premium activo. ¡Gracias!</Txt>
         </View>
       ) : !storeAvailable ? (
-        <Txt size={12} faint>
+        <Txt variant="label" size={12}>
           La suscripción se compra desde la app publicada en Google Play. En esta
           versión (Expo Go) el paywall es informativo.
         </Txt>
       ) : loadingOfferings ? (
         <Spinner />
       ) : packages.length === 0 ? (
-        <Txt size={12} faint>
+        <Txt variant="label" size={12}>
           No hay planes disponibles ahora mismo.
         </Txt>
       ) : (
@@ -79,13 +79,13 @@ export function PaywallScreen({
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 borderWidth: 1,
-                borderColor: c.border2,
+                borderColor: c.line,
                 borderRadius: radius.lg,
                 padding: 14,
               }}
             >
-              <Txt weight="500">{LABEL[pkg.packageType] ?? pkg.product.title}</Txt>
-              <Txt weight="600" color={c.sky}>
+              <Txt>{LABEL[pkg.packageType] ?? pkg.product.title}</Txt>
+              <Txt variant="h2" color={c.amber}>
                 {pkg.product.priceString}
               </Txt>
             </Pressable>
@@ -107,12 +107,12 @@ export function PaywallScreen({
 
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <Pressable onPress={() => { onClose(); router.push('/terminos') }}>
-          <Txt size={11} color={c.sky}>
+          <Txt size={11} color={c.amber}>
             Términos
           </Txt>
         </Pressable>
         <Pressable onPress={() => { onClose(); router.push('/privacidad') }}>
-          <Txt size={11} color={c.sky}>
+          <Txt size={11} color={c.amber}>
             Privacidad
           </Txt>
         </Pressable>

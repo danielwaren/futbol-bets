@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import {
   toDateInputValue,
+  useBets,
   useMatches,
   useRefreshMatches,
   usingMockOdds,
@@ -12,14 +14,17 @@ import { DateLeagueBar } from '@/components/matches/DateLeagueBar'
 import { MatchCard } from '@/components/matches/MatchCard'
 import { AdSlot } from '@/components/AdSlot'
 import { BankrollSwitcher } from '@/components/bankroll/BankrollSwitcher'
+import { BankrollSummary } from '@/components/bankroll/BankrollSummary'
 import { Button, EmptyState, ErrorText, Spinner, Txt } from '@/components/ui'
+import { useBankrollContext } from '@/context/BankrollContext'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { usePaywall } from '@/context/PaywallContext'
-import { c } from '@/theme'
+import { c, motion, radius } from '@/theme'
 
 export default function Matches() {
   const entitlements = useEntitlements()
   const { openPaywall } = usePaywall()
+  const { selected: bankroll } = useBankrollContext()
   const allowed = entitlements.leagues
   const allowedKey = allowed.join(',')
 
@@ -33,6 +38,7 @@ export default function Matches() {
 
   const q = useMatches(leagues, date)
   const refresh = useRefreshMatches(leagues)
+  const bets = useBets(bankroll?.id)
   const matches = q.data?.matches ?? []
 
   return (
@@ -53,17 +59,15 @@ export default function Matches() {
         ) : null
       }
     >
+      {bankroll ? (
+        <BankrollSummary bankroll={bankroll} bets={bets.data ?? []} />
+      ) : null}
+
       <BankrollSwitcher />
 
       {usingMockOdds() && (
-        <View
-          style={{
-            backgroundColor: c.amberBg,
-            borderRadius: 12,
-            padding: 12,
-          }}
-        >
-          <Txt size={12} color={c.amber}>
+        <View style={{ backgroundColor: c.amberSoft, borderRadius: radius.md, padding: 12 }}>
+          <Txt variant="dataSm" color={c.amber}>
             Modo desarrollo (mock): partidos generados al azar.
           </Txt>
         </View>
@@ -75,7 +79,9 @@ export default function Matches() {
         allowedLeagues={allowed}
         onDateChange={setDate}
         onLeaguesChange={setLeagues}
-        onLockedPress={() => openPaywall('Esa liga es del plan Premium.')}
+        onLockedPress={() =>
+          openPaywall('Esa liga no está en tu selección. Premium desbloquea las 10.')
+        }
       />
 
       <AdSlot />
@@ -87,12 +93,14 @@ export default function Matches() {
       ) : q.isError ? (
         <ErrorText error={q.error} />
       ) : matches.length === 0 ? (
-        <EmptyState
-          title="No hay partidos para esta fecha"
-          hint="Prueba otra fecha o pulsa Actualizar. La API solo trae partidos próximos."
-        />
+        <Animated.View entering={FadeInDown.duration(motion.enter)}>
+          <EmptyState
+            title="No hay partidos para esta fecha"
+            hint="Prueba otra fecha o pulsa Actualizar. La API solo trae partidos próximos."
+          />
+        </Animated.View>
       ) : (
-        matches.map((m) => <MatchCard key={m.id} match={m} />)
+        matches.map((m, i) => <MatchCard key={m.id} match={m} index={i} />)
       )}
     </Screen>
   )

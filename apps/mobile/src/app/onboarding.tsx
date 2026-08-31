@@ -61,11 +61,11 @@ export default function Onboarding() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.canvas, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: c.night, paddingTop: insets.top }}>
       <View style={{ height: 44, justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 16 }}>
         {!last && (
           <Pressable onPress={finish} hitSlop={12}>
-            <Txt size={13} dim>
+            <Txt variant="label" size={10}>
               Saltar
             </Txt>
           </Pressable>
@@ -87,10 +87,10 @@ export default function Onboarding() {
           >
             <OnboardingArt scene={s.scene} size={Math.min(width - 96, 260)} />
             <View style={{ gap: 12, alignItems: 'center' }}>
-              <Txt size={22} weight="700" center>
+              <Txt variant="screen" size={25} center>
                 {s.title}
               </Txt>
-              <Txt size={14} dim center style={{ lineHeight: 21 }}>
+              <Txt variant="small" center style={{ lineHeight: 21, maxWidth: 320 }}>
                 {s.body}
               </Txt>
             </View>
@@ -107,7 +107,7 @@ export default function Onboarding() {
                 width: i === index ? 20 : 6,
                 height: 6,
                 borderRadius: 3,
-                backgroundColor: i === index ? c.sky : c.border2,
+                backgroundColor: i === index ? c.amber : c.line,
               }}
             />
           ))}

@@ -69,7 +69,7 @@ export function CreateBankrollModal({
 
   return (
     <Sheet open={open} onClose={() => onClose?.()} title={title} dismissable={!mandatory}>
-      <Txt size={13} dim>
+      <Txt variant="small" size={13}>
         Define el capital ficticio con el que vas a practicar. Toda la simulación
         parte de este monto.
       </Txt>
@@ -97,7 +97,7 @@ export function CreateBankrollModal({
             padding: 10,
           }}
         >
-          <Txt size={12} dim>
+          <Txt variant="small" size={12}>
             Banca para {LEAGUES[forcedLeague].label}
           </Txt>
         </View>
@@ -120,13 +120,13 @@ export function CreateBankrollModal({
               onPress={() => setAmount(String(p))}
               style={{
                 borderWidth: 1,
-                borderColor: c.border2,
+                borderColor: c.line,
                 borderRadius: radius.sm,
                 paddingHorizontal: 8,
                 paddingVertical: 4,
               }}
             >
-              <Txt size={12} dim>
+              <Txt variant="small" size={12}>
                 {formatCLP(p)}
               </Txt>
             </Pressable>

@@ -17,11 +17,17 @@ export default function Stats() {
   const q = useBets(bankroll?.id)
   const bets = q.data ?? []
 
-  if (!bankroll) return <Screen title="Estadísticas"><Spinner /></Screen>
+  if (!bankroll) {
+    return (
+      <Screen title="Análisis">
+        <Spinner />
+      </Screen>
+    )
+  }
 
   return (
     <Screen
-      title="Estadísticas"
+      title="Análisis"
       subtitle={bankroll.name}
       onRefresh={() => q.refetch()}
       refreshing={q.isFetching}
@@ -42,16 +48,18 @@ export default function Stats() {
             bets={bets}
             initialAmount={bankroll.initialAmount}
             createdAt={bankroll.createdAt}
+            index={1}
           />
           <CumulativePnLChart
             bets={bets}
             initialAmount={bankroll.initialAmount}
             createdAt={bankroll.createdAt}
+            index={2}
           />
-          <WinrateByMarketChart bets={bets} />
-          <RoiByMarketChart bets={bets} />
-          <LeaguePerformanceChart bets={bets} />
-          <BetsByMarketChart bets={bets} />
+          <WinrateByMarketChart bets={bets} index={3} />
+          <RoiByMarketChart bets={bets} index={4} />
+          <LeaguePerformanceChart bets={bets} index={5} />
+          <BetsByMarketChart bets={bets} index={6} />
         </>
       )}
     </Screen>
