@@ -57,7 +57,12 @@ export default function Onboarding() {
 
   function next() {
     if (last) return void finish()
-    scroller.current?.scrollTo({ x: (index + 1) * width, animated: true })
+    // El índice se actualiza aquí y no en onMomentumScrollEnd: en Android ese
+    // evento NO se dispara con un scrollTo programático, así que el contador se
+    // quedaba en 0 y cada toque volvía a la misma diapositiva.
+    const target = index + 1
+    setIndex(target)
+    scroller.current?.scrollTo({ x: target * width, animated: true })
   }
 
   return (
