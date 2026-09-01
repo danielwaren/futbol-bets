@@ -153,13 +153,13 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   markTxt: {
-    fontFamily: family.display,
+    fontFamily: family.bold,
     fontSize: 38,
     color: c.amberInk,
     lineHeight: 46,
   },
   wordmark: {
-    fontFamily: family.display,
+    fontFamily: family.bold,
     fontSize: 30,
     letterSpacing: -1,
     color: c.ink,

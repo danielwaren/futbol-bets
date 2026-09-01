@@ -62,7 +62,7 @@ function Ticket() {
         x="139"
         y="53"
         fontSize="15"
-        fontFamily={family.display}
+        fontFamily={family.bold}
         fill={c.night}
         textAnchor="middle"
       >
@@ -127,16 +127,14 @@ function Picker() {
         <G key={`a${i}`}>
           <Circle cx={p.x} cy={p.y} r="20" fill={c.amber} opacity={0.16} />
           <Circle cx={p.x} cy={p.y} r="20" fill="none" stroke={c.amber} strokeWidth="2.5" />
-          <SvgText
-            x={p.x}
-            y={p.y + 5}
-            fontSize="15"
-            fontFamily={family.display}
-            fill={c.amber}
-            textAnchor="middle"
-          >
-            ✓
-          </SvgText>
+          <Path
+            d={`M${p.x - 6} ${p.y} l4.5 4.5 L${p.x + 7} ${p.y - 6}`}
+            stroke={c.amber}
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
         </G>
       ))}
     </G>

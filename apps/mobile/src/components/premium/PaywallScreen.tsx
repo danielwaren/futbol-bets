@@ -4,6 +4,7 @@ import { useMonetization } from '@/context/MonetizationContext'
 import type { PurchasesPackage } from '@/lib/purchases'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { Sheet, Button, Txt, Spinner, ErrorText } from '@/components/ui'
+import { Icon } from '@/components/icons'
 import { c, radius } from '@/theme'
 
 const PERKS = [
@@ -47,7 +48,7 @@ export function PaywallScreen({
       <View style={{ gap: 8 }}>
         {PERKS.map((p) => (
           <View key={p} style={{ flexDirection: 'row', gap: 8 }}>
-            <Txt color={c.pitch}>✓</Txt>
+            <Icon.check size={15} color={c.pitch} strokeWidth={2.25} />
             <Txt style={{ flex: 1 }}>{p}</Txt>
           </View>
         ))}

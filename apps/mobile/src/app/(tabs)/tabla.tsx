@@ -10,7 +10,6 @@ import {
   type StandingRow,
 } from '@futbolismo/core'
 import { Screen } from '@/components/Screen'
-import { Crest } from '@/components/club/Crest'
 import { Button, Card, Chip, EmptyState, ErrorText, Spinner, Txt } from '@/components/ui'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { c, family, leagueColor, motion, radius, shadow } from '@/theme'
@@ -58,8 +57,7 @@ function Row({ row, index }: { row: StandingRow; index: number }) {
       </View>
 
       <View style={s.team}>
-        <Crest team={row.team} size={26} />
-        <Txt variant="h2" size={13} numberOfLines={1} style={{ flex: 1 }}>
+        <Txt variant="team" size={14} numberOfLines={1} style={{ flex: 1 }}>
           {row.team}
         </Txt>
       </View>

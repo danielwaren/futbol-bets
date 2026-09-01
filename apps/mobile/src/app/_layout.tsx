@@ -9,16 +9,14 @@ import {
 } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
+import { IBMPlexSansCondensed_400Regular } from '@expo-google-fonts/ibm-plex-sans-condensed/400Regular'
+import { IBMPlexSansCondensed_600SemiBold } from '@expo-google-fonts/ibm-plex-sans-condensed/600SemiBold'
+import { IBMPlexSansCondensed_700Bold } from '@expo-google-fonts/ibm-plex-sans-condensed/700Bold'
+import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono/400Regular'
+import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Medium'
+import { IBMPlexMono_700Bold } from '@expo-google-fonts/ibm-plex-mono/700Bold'
 // Import por subruta a propósito: el índice del paquete reexporta TODOS los
 // pesos e itálicas, y Metro los empaqueta (≈1,5 MB de TTF que no usamos).
-import { Chivo_300Light } from '@expo-google-fonts/chivo/300Light'
-import { Chivo_400Regular } from '@expo-google-fonts/chivo/400Regular'
-import { Chivo_600SemiBold } from '@expo-google-fonts/chivo/600SemiBold'
-import { Chivo_700Bold } from '@expo-google-fonts/chivo/700Bold'
-import { Chivo_900Black } from '@expo-google-fonts/chivo/900Black'
-import { ChivoMono_400Regular } from '@expo-google-fonts/chivo-mono/400Regular'
-import { ChivoMono_500Medium } from '@expo-google-fonts/chivo-mono/500Medium'
-import { ChivoMono_700Bold } from '@expo-google-fonts/chivo-mono/700Bold'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -64,14 +62,12 @@ function Gate() {
   // Sin las fuentes cargadas la app se dibuja con la del sistema y salta al
   // reemplazarla; esperamos con la splash puesta.
   const [fontsReady] = useFonts({
-    Chivo_300Light,
-    Chivo_400Regular,
-    Chivo_600SemiBold,
-    Chivo_700Bold,
-    Chivo_900Black,
-    ChivoMono_400Regular,
-    ChivoMono_500Medium,
-    ChivoMono_700Bold,
+    IBMPlexSansCondensed_400Regular,
+    IBMPlexSansCondensed_600SemiBold,
+    IBMPlexSansCondensed_700Bold,
+    IBMPlexMono_400Regular,
+    IBMPlexMono_500Medium,
+    IBMPlexMono_700Bold,
   })
 
   const booting = loading || seenOnboarding === null || !fontsReady

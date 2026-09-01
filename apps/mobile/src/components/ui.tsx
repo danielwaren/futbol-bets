@@ -8,6 +8,8 @@ import {
   Text,
   TextInput,
   View,
+  type AccessibilityRole,
+  type AccessibilityState,
   type StyleProp,
   type TextInputProps,
   type TextStyle,
@@ -21,7 +23,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { c, family, motion, radius, shadow, space, type } from '@/theme'
+import { Icon, ICON_STROKE } from '@/components/icons'
+import { c, family, motion, radius, shadow, space, type, TAP } from '@/theme'
 
 /* ------------------------------------------------------------------ texto */
 
@@ -87,12 +90,20 @@ export function Springy({
   disabled,
   scaleTo = 0.94,
   style,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
 }: {
   children: ReactNode
   onPress?: () => void
   disabled?: boolean
   scaleTo?: number
   style?: StyleProp<ViewStyle>
+  accessibilityRole?: AccessibilityRole
+  accessibilityLabel?: string
+  accessibilityHint?: string
+  accessibilityState?: AccessibilityState
 }) {
   const sv = useSharedValue(1)
   const anim = useAnimatedStyle(() => ({ transform: [{ scale: sv.value }] }))
@@ -100,6 +111,10 @@ export function Springy({
     <AnimatedPressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: Boolean(disabled), ...accessibilityState }}
       onPressIn={() => {
         sv.value = withSpring(scaleTo, motion.spring)
       }}
@@ -134,6 +149,8 @@ export function Button({
   disabled,
   style,
   left,
+  accessibilityLabel,
+  accessibilityHint,
 }: {
   title: string
   onPress?: () => void
@@ -143,11 +160,22 @@ export function Button({
   disabled?: boolean
   style?: StyleProp<ViewStyle>
   left?: ReactNode
+  accessibilityLabel?: string
+  accessibilityHint?: string
 }) {
   const v = BTN[variant]
   const off = disabled || loading
   return (
-    <Springy onPress={onPress} disabled={off} scaleTo={0.96} style={style}>
+    <Springy
+      onPress={onPress}
+      disabled={off}
+      scaleTo={0.96}
+      style={style}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: Boolean(off), busy: Boolean(loading) }}
+    >
       <View
         style={[
           s.btn,
@@ -251,16 +279,24 @@ export function Chip({
   locked,
   color,
   onPress,
+  leading,
 }: {
   label: string
   active?: boolean
   locked?: boolean
   color?: string
   onPress?: () => void
+  leading?: ReactNode
 }) {
   const tint = color ?? c.amber
   return (
-    <Springy onPress={onPress} scaleTo={0.93}>
+    <Springy
+      onPress={onPress}
+      scaleTo={0.93}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: Boolean(active), disabled: Boolean(locked) }}
+    >
       <View
         style={[
           s.chip,
@@ -268,6 +304,7 @@ export function Chip({
           locked && { opacity: 0.42 },
         ]}
       >
+        {leading}
         <Text
           style={{
             fontFamily: active ? family.monoBold : family.monoMed,
@@ -380,10 +417,14 @@ export function Sheet({
           <View style={s.sheetHead}>
             <Txt variant="h2">{title}</Txt>
             {dismissable && (
-              <Pressable onPress={onClose} hitSlop={14}>
-                <Txt variant="h2" color={c.inkFaint}>
-                  ✕
-                </Txt>
+              <Pressable
+                onPress={onClose}
+                hitSlop={14}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar"
+                style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
+              >
+                <Icon.close size={20} color={c.inkDim} strokeWidth={ICON_STROKE} />
               </Pressable>
             )}
           </View>
@@ -408,6 +449,7 @@ const s = StyleSheet.create({
     padding: 14,
   },
   btn: {
+    minHeight: TAP,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -416,7 +458,7 @@ const s = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 18,
   },
-  btnSm: { paddingVertical: 9, paddingHorizontal: 13 },
+  btnSm: { minHeight: 38, paddingVertical: 8, paddingHorizontal: 13 },
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -428,12 +470,17 @@ const s = StyleSheet.create({
     backgroundColor: c.board2,
     borderRadius: radius.md,
     paddingHorizontal: 13,
-    paddingVertical: 11,
+    paddingVertical: 12,
+    minHeight: TAP,
     color: c.ink,
     fontFamily: family.body,
     fontSize: 14.5,
   },
   chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    minHeight: 34,
     borderWidth: 1,
     borderColor: c.line,
     borderRadius: radius.pill,

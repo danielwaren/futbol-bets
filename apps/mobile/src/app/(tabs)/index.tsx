@@ -15,7 +15,8 @@ import { MatchCard } from '@/components/matches/MatchCard'
 import { AdSlot } from '@/components/AdSlot'
 import { BankrollSwitcher } from '@/components/bankroll/BankrollSwitcher'
 import { BankrollSummary } from '@/components/bankroll/BankrollSummary'
-import { Button, EmptyState, ErrorText, Spinner, Txt } from '@/components/ui'
+import { Button, EmptyState, ErrorText, Txt } from '@/components/ui'
+import { MatchSkeleton, SkeletonList } from '@/components/Skeleton'
 import { useBankrollContext } from '@/context/BankrollContext'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { usePaywall } from '@/context/PaywallContext'
@@ -89,7 +90,7 @@ export default function Matches() {
       {refresh.isError && <ErrorText error={refresh.error} />}
 
       {q.isLoading ? (
-        <Spinner />
+        <SkeletonList count={3}>{(i) => <MatchSkeleton key={i} />}</SkeletonList>
       ) : q.isError ? (
         <ErrorText error={q.error} />
       ) : matches.length === 0 ? (

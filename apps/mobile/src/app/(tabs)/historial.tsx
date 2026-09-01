@@ -15,15 +15,8 @@ import {
 } from '@futbolismo/core'
 import { Screen } from '@/components/Screen'
 import { BetCard } from '@/components/bets/BetCard'
-import {
-  Button,
-  Card,
-  EmptyState,
-  ErrorText,
-  Select,
-  Spinner,
-  Txt,
-} from '@/components/ui'
+import { Button, Card, EmptyState, ErrorText, Select, Txt } from '@/components/ui'
+import { BetSkeleton, SkeletonList } from '@/components/Skeleton'
 import { useBankrollContext } from '@/context/BankrollContext'
 import { useBetForm } from '@/context/BetFormContext'
 import { c, motion, radius } from '@/theme'
@@ -146,7 +139,7 @@ export default function History() {
       />
 
       {q.isLoading ? (
-        <Spinner />
+        <SkeletonList count={4}>{(i) => <BetSkeleton key={i} />}</SkeletonList>
       ) : q.isError ? (
         <ErrorText error={q.error} />
       ) : filtered.length === 0 ? (

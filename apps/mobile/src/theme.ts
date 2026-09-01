@@ -4,7 +4,7 @@ import type { TextStyle, ViewStyle } from 'react-native'
 /**
  * "Estadio nocturno": la atmósfera de un partido bajo focos con densidad de datos.
  *
- * Regla de color que sostiene todo el sistema: el ÁMBAR significa "tocable" y el
+ * Regla de color que sostiene el sistema: el ÁMBAR significa "tocable" y el
  * VERDE/ROJO significan "resultado". Nunca se mezclan — por eso la marca no usa
  * verde y las cifras de P&L no usan ámbar.
  */
@@ -35,54 +35,64 @@ export const c = {
   flagSoft: 'rgba(255,92,92,0.14)',
 
   white: '#FFFFFF',
-  overlay: 'rgba(4,7,6,0.78)',
+  /** Scrim de modal: 40-60% para aislar el contenido (regla blur-purpose). */
+  overlay: 'rgba(4,7,6,0.72)',
 } as const
 
-/** Acento por liga: el color con el que se identifica cada competición. */
+/** Acento por liga. Se usa en chips y etiquetas, nunca como barra decorativa. */
 export const leagueColor: Record<string, string> = {
-  chile: '#FF4D4D',
-  laliga: '#FF8A3D',
-  premier: '#B692FF',
-  seriea: '#22D3EE',
-  bundesliga: '#FF6B81',
-  ligue1: '#4DA3FF',
-  primeira: '#35D07F',
-  eredivisie: '#FF9F45',
-  brasileirao: '#A8E05F',
-  argentina: '#7BA8FF',
+  chile: '#FF6B6B',
+  laliga: '#FF9F45',
+  premier: '#C3A6FF',
+  seriea: '#4FD8EE',
+  bundesliga: '#FF8095',
+  ligue1: '#6BB4FF',
+  primeira: '#57DC98',
+  eredivisie: '#FFB05C',
+  brasileirao: '#B7E86A',
+  argentina: '#8FB8FF',
 }
 
-export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 18,
-  xl: 26,
-  pill: 999,
-} as const
+/** Código de país: reemplaza a las banderas emoji (regla no-emoji-icons). */
+export const leagueCode: Record<string, string> = {
+  chile: 'CHL',
+  laliga: 'ESP',
+  premier: 'ENG',
+  seriea: 'ITA',
+  bundesliga: 'GER',
+  ligue1: 'FRA',
+  primeira: 'POR',
+  eredivisie: 'NED',
+  brasileirao: 'BRA',
+  argentina: 'ARG',
+}
 
+export const radius = { sm: 8, md: 12, lg: 18, xl: 26, pill: 999 } as const
+
+/** Ritmo 4/8 (regla spacing-scale). */
 export const space = (n: number) => n * 4
 
-/**
- * Elevación por sombra, no por borde luminoso: las tarjetas flotan sobre la
- * noche en vez de dibujarse con neón.
- */
+/** Tamaño mínimo de área táctil: 44pt iOS / 48dp Android. */
+export const TAP = Platform.OS === 'android' ? 48 : 44
+
+/** Elevación por sombra, no por borde luminoso. Escala consistente. */
 export const shadow = {
   card: Platform.select<ViewStyle>({
-    android: { elevation: 3 },
+    android: { elevation: 2 },
     default: {
       shadowColor: '#000',
-      shadowOpacity: 0.4,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.36,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 3 },
     },
   })!,
   raised: Platform.select<ViewStyle>({
-    android: { elevation: 7 },
+    android: { elevation: 6 },
     default: {
       shadowColor: '#000',
-      shadowOpacity: 0.5,
-      shadowRadius: 20,
-      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.48,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 7 },
     },
   })!,
   sheet: Platform.select<ViewStyle>({
@@ -98,70 +108,84 @@ export const shadow = {
 
 /** Familias cargadas en `_layout.tsx` con expo-font. */
 export const family = {
-  display: 'Chivo_900Black',
-  bold: 'Chivo_700Bold',
-  semi: 'Chivo_600SemiBold',
-  body: 'Chivo_400Regular',
-  light: 'Chivo_300Light',
-  mono: 'ChivoMono_400Regular',
-  monoMed: 'ChivoMono_500Medium',
-  monoBold: 'ChivoMono_700Bold',
+  bold: 'IBMPlexSansCondensed_700Bold',
+  semi: 'IBMPlexSansCondensed_600SemiBold',
+  body: 'IBMPlexSansCondensed_400Regular',
+  sans: 'IBMPlexSansCondensed_400Regular',
+  mono: 'IBMPlexMono_400Regular',
+  monoMed: 'IBMPlexMono_500Medium',
+  monoBold: 'IBMPlexMono_700Bold',
 } as const
 
 /**
- * Todas las cifras van en Chivo Mono: cuotas, montos y posiciones quedan
- * alineadas en columna en vez de bailar entre filas.
+ * Escala tipográfica fija (regla font-scale). Todas las cifras van en la mono
+ * con numerales tabulares para que no bailen entre filas.
  */
 export const type = {
   /** Título de pantalla. */
   screen: {
-    fontFamily: family.display,
-    fontSize: 26,
-    letterSpacing: -0.7,
+    fontFamily: family.bold,
+    fontSize: 27,
+    letterSpacing: -0.4,
     color: c.ink,
     textTransform: 'uppercase',
   } as TextStyle,
-  /** Nombre de equipo. */
+  /** Nombre de equipo: el ancla visual de la tarjeta ahora que no hay escudos. */
   team: {
-    fontFamily: family.bold,
-    fontSize: 15.5,
-    letterSpacing: -0.2,
+    fontFamily: family.semi,
+    fontSize: 17,
+    letterSpacing: -0.1,
     color: c.ink,
     textTransform: 'uppercase',
   } as TextStyle,
   h2: {
     fontFamily: family.bold,
     fontSize: 17,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     color: c.ink,
   } as TextStyle,
-  body: { fontFamily: family.body, fontSize: 14, color: c.ink } as TextStyle,
-  small: { fontFamily: family.body, fontSize: 12.5, color: c.inkDim } as TextStyle,
+  /** Cuerpo: 16px mínimo y 1.5 de interlineado (reglas readable-font-size, line-height). */
+  body: {
+    fontFamily: family.body,
+    fontSize: 16,
+    lineHeight: 24,
+    color: c.ink,
+  } as TextStyle,
+  small: {
+    fontFamily: family.body,
+    fontSize: 14,
+    lineHeight: 21,
+    color: c.inkDim,
+  } as TextStyle,
   /** Etiqueta de marcador: mayúsculas espaciadas, mono. */
   label: {
     fontFamily: family.monoMed,
-    fontSize: 10,
-    letterSpacing: 1.4,
+    fontSize: 11,
+    letterSpacing: 1.3,
     color: c.inkFaint,
     textTransform: 'uppercase',
   } as TextStyle,
   /** Cifra grande (banca). */
   figure: {
     fontFamily: family.monoBold,
-    fontSize: 32,
-    letterSpacing: -1,
+    fontSize: 33,
+    letterSpacing: -1.2,
     color: c.ink,
   } as TextStyle,
   /** Cifra en línea (cuota, monto). */
   data: { fontFamily: family.monoBold, fontSize: 15, color: c.ink } as TextStyle,
-  dataSm: { fontFamily: family.mono, fontSize: 11.5, color: c.inkDim } as TextStyle,
+  dataSm: { fontFamily: family.mono, fontSize: 12.5, color: c.inkDim } as TextStyle,
 } as const
 
-/** Duraciones y curvas compartidas para que el movimiento se sienta de una pieza. */
+/**
+ * Tokens de movimiento compartidos, para que todo tenga el mismo ritmo
+ * (regla motion-consistency). La salida es más corta que la entrada.
+ */
 export const motion = {
-  stagger: 55,
-  enter: 420,
-  quick: 180,
+  stagger: 45,
+  enter: 320,
+  exit: 200,
+  quick: 160,
   spring: { damping: 15, stiffness: 260, mass: 0.6 },
   springSoft: { damping: 18, stiffness: 150 },
 } as const

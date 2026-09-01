@@ -1,36 +1,32 @@
 import { Tabs } from 'expo-router'
-import { StyleSheet, Text, View } from 'react-native'
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated'
-import { useEffect } from 'react'
+import type { LucideIcon } from 'lucide-react-native'
 import { useBankrollContext } from '@/context/BankrollContext'
 import { useCreateBankroll } from '@futbolismo/core'
 import { CreateBankrollModal } from '@/components/bankroll/CreateBankrollModal'
-import { c, family, motion } from '@/theme'
+import { Icon, ICON_STROKE } from '@/components/icons'
+import { c, family, TAP } from '@/theme'
 
-/** El icono sube y crece al activarse: confirma el toque sin texto extra. */
-function Icon({ label, focused }: { label: string; focused: boolean }) {
-  const sv = useSharedValue(focused ? 1 : 0)
-  useEffect(() => {
-    sv.value = withSpring(focused ? 1 : 0, motion.spring)
-  }, [focused, sv])
-
-  const anim = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: -2 * sv.value },
-      { scale: 1 + 0.12 * sv.value },
-    ],
-  }))
-
-  return (
-    <Animated.View style={anim}>
-      <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.55 }}>{label}</Text>
-    </Animated.View>
-  )
+/** Iconos vectoriales con trazo uniforme; el activo se rellena de ámbar. */
+function tabIcon(Ico: LucideIcon) {
+  return function TabIcon({ color, focused }: { color: string; focused: boolean }) {
+    return (
+      <Ico
+        size={22}
+        color={color}
+        strokeWidth={focused ? 2.25 : ICON_STROKE}
+        fill={focused ? 'rgba(255,182,39,0.16)' : 'transparent'}
+      />
+    )
+  }
 }
+
+const SCREENS = [
+  { name: 'index', title: 'Partidos', icon: Icon.matches },
+  { name: 'tabla', title: 'Tabla', icon: Icon.table },
+  { name: 'historial', title: 'Historial', icon: Icon.history },
+  { name: 'estadisticas', title: 'Análisis', icon: Icon.stats },
+  { name: 'cuenta', title: 'Cuenta', icon: Icon.account },
+] as const
 
 export default function TabsLayout() {
   const { needsFirstBankroll } = useBankrollContext()
@@ -41,55 +37,42 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          sceneStyle: { backgroundColor: c.night },
-          tabBarStyle: s.bar,
+          tabBarStyle: {
+            backgroundColor: c.night,
+            borderTopColor: c.lineSoft,
+            borderTopWidth: 1,
+            height: TAP + 34,
+            paddingTop: 8,
+            paddingBottom: 10,
+          },
+          tabBarItemStyle: { paddingVertical: 2 },
           tabBarActiveTintColor: c.amber,
           tabBarInactiveTintColor: c.inkFaint,
-          tabBarLabelStyle: s.label,
-          tabBarItemStyle: { paddingTop: 6 },
+          tabBarLabelStyle: {
+            fontFamily: family.monoMed,
+            fontSize: 9.5,
+            letterSpacing: 0.6,
+            textTransform: 'uppercase',
+          },
         }}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Partidos',
-            tabBarIcon: ({ focused }) => <Icon label="⚽" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen
-          name="tabla"
-          options={{
-            title: 'Tabla',
-            tabBarIcon: ({ focused }) => <Icon label="📊" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen
-          name="historial"
-          options={{
-            title: 'Historial',
-            tabBarIcon: ({ focused }) => <Icon label="🎫" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen
-          name="estadisticas"
-          options={{
-            title: 'Análisis',
-            tabBarIcon: ({ focused }) => <Icon label="📈" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen
-          name="cuenta"
-          options={{
-            title: 'Cuenta',
-            tabBarIcon: ({ focused }) => <Icon label="👤" focused={focused} />,
-          }}
-        />
+        {SCREENS.map((s) => (
+          <Tabs.Screen
+            key={s.name}
+            name={s.name}
+            options={{
+              title: s.title,
+              tabBarIcon: tabIcon(s.icon),
+              tabBarAccessibilityLabel: s.title,
+            }}
+          />
+        ))}
       </Tabs>
 
       <CreateBankrollModal
         open={needsFirstBankroll}
         mandatory
-        title="Bienvenido · crea tu banca"
+        title="Crea tu banca"
         submitting={createBankroll.isPending}
         error={createBankroll.error}
         onSubmit={(params) => createBankroll.mutate(params)}
@@ -97,20 +80,3 @@ export default function TabsLayout() {
     </>
   )
 }
-
-const s = StyleSheet.create({
-  bar: {
-    backgroundColor: c.board,
-    borderTopColor: c.lineSoft,
-    borderTopWidth: 1,
-    height: 62,
-    paddingBottom: 8,
-    paddingTop: 4,
-  },
-  label: {
-    fontFamily: family.monoMed,
-    fontSize: 9,
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-  },
-})

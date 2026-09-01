@@ -15,10 +15,10 @@ import {
   type Bet,
 } from '@futbolismo/core'
 import { useBetForm } from '@/context/BetFormContext'
-import { Crest } from '@/components/club/Crest'
 import { Button, Springy, Txt } from '@/components/ui'
 import { BetStatusBadge } from '@/components/badges'
-import { c, leagueColor, motion, radius, shadow } from '@/theme'
+import { Icon, ICON_STROKE } from '@/components/icons'
+import { c, leagueColor, motion, radius, shadow, TAP } from '@/theme'
 
 const STRIPE: Record<Bet['status'], string> = {
   pending: c.amber,
@@ -74,13 +74,9 @@ export function BetCard({ bet, index = 0 }: { bet: Bet; index?: number }) {
         <View style={s.body}>
           <View style={s.top}>
             <View style={{ flex: 1, gap: 3 }}>
-              <View style={s.crests}>
-                <Crest team={bet.homeTeam} size={22} />
-                <Crest team={bet.awayTeam} size={22} />
-                <Txt variant="team" size={13.5} numberOfLines={1} style={{ flex: 1 }}>
-                  {bet.homeTeam} vs {bet.awayTeam}
-                </Txt>
-              </View>
+              <Txt variant="team" size={15} numberOfLines={2}>
+                {bet.homeTeam} vs {bet.awayTeam}
+              </Txt>
               <Txt variant="label" size={9} color={accent}>
                 {LEAGUES[bet.league].shortLabel} · {formatDateTime(bet.matchDate)}
               </Txt>
@@ -88,9 +84,12 @@ export function BetCard({ bet, index = 0 }: { bet: Bet; index?: number }) {
             <View style={{ alignItems: 'flex-end', gap: 3 }}>
               <BetStatusBadge status={bet.status} />
               {bet.status === 'pending' && matchEnded(bet) && (
-                <Txt variant="label" size={8.5}>
-                  ⏳ esperando
-                </Txt>
+                <View style={s.waiting}>
+                  <Icon.pending size={11} color={c.inkFaint} strokeWidth={ICON_STROKE} />
+                  <Txt variant="label" size={9}>
+                    Esperando
+                  </Txt>
+                </View>
               )}
               {bet.resultDetail ? (
                 <Txt variant="label" size={8.5}>
@@ -178,13 +177,16 @@ export function BetCard({ bet, index = 0 }: { bet: Bet; index?: number }) {
             disabled={busyAll}
             onPress={() => openEdit(bet)}
           />
-          <Button
-            variant="ghost"
-            size="sm"
-            title="🗑"
-            disabled={busyAll}
+          <Springy
             onPress={confirmDelete}
-          />
+            disabled={busyAll}
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar apuesta"
+          >
+            <View style={s.iconBtn}>
+              <Icon.delete size={17} color={c.flag} strokeWidth={ICON_STROKE} />
+            </View>
+          </Springy>
         </Animated.View>
       )}
     </Animated.View>
@@ -201,11 +203,20 @@ const s = StyleSheet.create({
   stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 2.5, zIndex: 1 },
   body: { padding: 12, paddingLeft: 14, gap: 8 },
   top: { flexDirection: 'row', gap: 10 },
-  crests: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   line: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  waiting: { flexDirection: "row", alignItems: "center", gap: 4 },
+  iconBtn: {
+    width: TAP,
+    height: TAP - 8,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: c.line,
+    alignItems: "center",
+    justifyContent: "center",
   },
   actions: {
     flexDirection: 'row',

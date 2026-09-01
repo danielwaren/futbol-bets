@@ -10,6 +10,7 @@ import {
   type League,
 } from '@futbolismo/core'
 import { Card, Chip, Springy, Txt } from '@/components/ui'
+import { Icon, ICON_STROKE } from '@/components/icons'
 import { c, leagueColor, radius } from '@/theme'
 
 export function DateLeagueBar({
@@ -84,8 +85,9 @@ export function DateLeagueBar({
         {locked.map((l) => (
           <Chip
             key={l.id}
-            label={`🔒 ${l.shortLabel}`}
+            label={l.shortLabel}
             locked
+            leading={<Icon.lock size={11} color={c.inkFaint} strokeWidth={ICON_STROKE} />}
             onPress={onLockedPress}
           />
         ))}
