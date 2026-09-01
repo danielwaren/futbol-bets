@@ -77,6 +77,26 @@ const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
 })
 
+/**
+ * Secreto compartido con el cron. Vive en `app_config` (tabla que solo lee el
+ * service role), no en un secret de la función: así el cron queda programado
+ * desde una migración, sin que nadie tenga que pegar claves a mano.
+ * Se mantiene el env por compatibilidad.
+ */
+let cachedSecrets: string[] | null = null
+async function cronSecrets(): Promise<string[]> {
+  if (cachedSecrets) return cachedSecrets
+  const { data } = await admin
+    .from('app_config')
+    .select('value')
+    .eq('key', 'cron_secret')
+    .maybeSingle()
+  // Se aceptan ambos: si el env quedó configurado de antes seguiría siendo
+  // válido, y el cron nuevo usa el de la BD.
+  cachedSecrets = [CRON_SECRET, data?.value ?? ''].filter(Boolean)
+  return cachedSecrets
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (!ODDS_KEY) return json({ error: 'THE_ODDS_API_KEY no configurada' }, 500)
@@ -86,8 +106,11 @@ Deno.serve(async (req) => {
     body = await req.json()
   } catch { /* vacío */ }
 
+  const secrets = await cronSecrets()
   const isCron =
-    Boolean(body.cron) && CRON_SECRET !== '' && body.secret === CRON_SECRET
+    Boolean(body.cron) &&
+    typeof body.secret === 'string' &&
+    secrets.includes(body.secret)
 
   let userId: string | null = null
   if (!isCron) {

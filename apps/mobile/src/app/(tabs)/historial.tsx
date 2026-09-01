@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import {
@@ -67,6 +67,19 @@ export default function History() {
         new Date(b.matchDate).getTime() < now,
     ).length
   }, [all])
+
+  /**
+   * Resuelve solo al entrar si hay partidos ya terminados. El cron lo hace cada
+   * hora, pero si el usuario abre la app justo después de un partido no tiene
+   * por qué esperar ni tocar nada.
+   */
+  const autoSettled = useRef(false)
+  useEffect(() => {
+    if (autoSettled.current) return
+    if (usingMockOdds() || awaiting === 0 || settleAll.isPending) return
+    autoSettled.current = true
+    settleAll.mutate()
+  }, [awaiting, settleAll])
 
   return (
     <Screen
