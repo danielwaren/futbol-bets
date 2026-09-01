@@ -1,5 +1,5 @@
 import * as AuthSession from 'expo-auth-session'
-import * as Crypto from 'expo-crypto'
+import { getQueryParams } from 'expo-auth-session/build/QueryParams'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@futbolismo/core'
 import { googleWebClientId, isExpoGo } from './platform'
@@ -7,21 +7,39 @@ import { googleWebClientId, isExpoGo } from './platform'
 WebBrowser.maybeCompleteAuthSession()
 
 /**
- * Login con Google:
- * - **Dev build / release**: SDK nativo (`@react-native-google-signin/google-signin`),
- *   flujo de una pulsación, devuelve un `idToken` que pasamos a Supabase.
- * - **Expo Go**: no hay módulo nativo → fallback a `expo-auth-session` (navegador
- *   del sistema + redirect al scheme `futbolismo://`).
+ * Login con Google, por dos caminos:
  *
- * Ambos caminos necesitan `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (OAuth 2.0 Client ID
- * de tipo "Web application", el mismo del provider Google de Supabase).
+ * - **Dev build / release**: SDK nativo de Google. Selector de cuentas del
+ *   sistema, una pulsación, sin salir de la app.
+ * - **Expo Go**: no hay módulo nativo → OAuth de Supabase en el navegador.
+ *   Google redirige a `https://<ref>.supabase.co/auth/v1/callback` (una URL
+ *   https que Google sí acepta) y Supabase devuelve al esquema de la app.
+ *
+ * El camino del navegador NO necesita ninguna credencial en el cliente: el
+ * Client ID y el Secret viven en el proveedor Google del dashboard de Supabase.
  */
 export function nativeGoogleAvailable(): boolean {
   return !isExpoGo && Boolean(googleWebClientId)
 }
 
+/** Crea la sesión a partir de la URL de vuelta del navegador. */
+export async function createSessionFromUrl(url: string): Promise<boolean> {
+  const { params, errorCode } = getQueryParams(url)
+  if (errorCode) throw new Error(errorCode)
+
+  const { access_token, refresh_token } = params
+  if (!access_token || !refresh_token) return false
+
+  const { error } = await supabase.auth.setSession({
+    access_token,
+    refresh_token,
+  })
+  if (error) throw error
+  return true
+}
+
 async function signInWithGoogleNative(): Promise<void> {
-  // require() perezoso: en Expo Go este módulo nativo no existe y no debe tocarse.
+  // require perezoso: en Expo Go este módulo nativo no existe y no debe tocarse.
   const { GoogleSignin, statusCodes } =
     require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin')
 
@@ -47,50 +65,30 @@ async function signInWithGoogleNative(): Promise<void> {
   }
 }
 
-const discovery = {
-  authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-  tokenEndpoint: 'https://oauth2.googleapis.com/token',
-}
-
 async function signInWithGoogleBrowser(): Promise<void> {
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'futbolismo' })
-  const rawNonce = Crypto.randomUUID()
-  const hashedNonce = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    rawNonce,
-  )
+  // En Expo Go devuelve exp://<ip>:8081/--/...; en un build, futbolismo://
+  const redirectTo = AuthSession.makeRedirectUri()
 
-  const request = new AuthSession.AuthRequest({
-    clientId: googleWebClientId as string,
-    redirectUri,
-    responseType: AuthSession.ResponseType.IdToken,
-    scopes: ['openid', 'profile', 'email'],
-    extraParams: { nonce: hashedNonce },
-  })
-
-  const result = await request.promptAsync(discovery)
-  if (result.type !== 'success') {
-    if (result.type === 'dismiss' || result.type === 'cancel') return
-    throw new Error('El login con Google no se completó.')
-  }
-
-  const idToken = result.params.id_token
-  if (!idToken) throw new Error('Google no devolvió id_token.')
-
-  const { error } = await supabase.auth.signInWithIdToken({
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    token: idToken,
-    nonce: rawNonce,
+    options: { redirectTo, skipBrowserRedirect: true },
   })
   if (error) throw error
+  if (!data?.url) throw new Error('Supabase no devolvió la URL de autorización.')
+
+  const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo)
+  if (res.type !== 'success') return // el usuario cerró el navegador
+
+  const ok = await createSessionFromUrl(res.url)
+  if (!ok) {
+    throw new Error(
+      'Google no devolvió una sesión. Revisa que la URL de redirección esté ' +
+        'permitida en Supabase (Authentication → URL Configuration).',
+    )
+  }
 }
 
 export async function signInWithGoogle(): Promise<void> {
-  if (!googleWebClientId) {
-    throw new Error(
-      'Falta EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID. Usa el acceso por email o configúralo.',
-    )
-  }
   if (nativeGoogleAvailable()) return signInWithGoogleNative()
   return signInWithGoogleBrowser()
 }
@@ -110,7 +108,7 @@ export async function signOut(): Promise<void> {
         require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin')
       await GoogleSignin.signOut()
     } catch {
-      /* no pasa nada si no había sesión de Google nativa */
+      /* no pasa nada si no había sesión nativa de Google */
     }
   }
   await supabase.auth.signOut()

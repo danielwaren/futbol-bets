@@ -6,9 +6,15 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import * as Linking from 'expo-linking'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@futbolismo/core'
-import { signInWithGoogle, signInWithEmail, signOut } from '@/lib/auth'
+import {
+  createSessionFromUrl,
+  signInWithGoogle,
+  signInWithEmail,
+  signOut,
+} from '@/lib/auth'
 
 interface AuthContextValue {
   session: Session | null
@@ -35,6 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
     return () => sub.subscription.unsubscribe()
   }, [])
+
+  /**
+   * Vuelta del OAuth por navegador. Si la app siguió viva la resuelve
+   * `openAuthSessionAsync`, pero si el sistema la mató mientras el usuario
+   * estaba en Google, los tokens llegan como enlace profundo y hay que
+   * canjearlos aquí.
+   */
+  const url = Linking.useURL()
+  useEffect(() => {
+    if (!url) return
+    createSessionFromUrl(url).catch(() => {
+      /* el enlace no traía tokens: no es un retorno de OAuth */
+    })
+  }, [url])
 
   const value = useMemo<AuthContextValue>(
     () => ({

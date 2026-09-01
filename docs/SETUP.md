@@ -33,12 +33,68 @@ Sin la key la pantalla muestra un estado vacío; no rompe nada más.
 
 ## 2. Google Sign-In
 
-1. **Google Cloud Console** → crea un OAuth 2.0 Client ID (tipo *Web application*).
-   - Authorized redirect URI: `https://dngolugwcemkexbeagzu.supabase.co/auth/v1/callback`
-   - (Para el APK en Hito 2 se añade un client *Android* aparte.)
-2. **Supabase Dashboard** → Authentication → Providers → **Google**: pega Client ID y Client Secret, guarda.
-3. Authentication → URL Configuration → Site URL: `http://localhost:5173` (dev) y la URL de producción cuando exista; añade ambas a *Redirect URLs*.
-4. (Recomendado) Authentication → Policies → activa **Leaked password protection**.
+La app tiene **dos caminos** y ambos usan el mismo proveedor de Supabase:
+
+| Dónde | Camino | Necesita |
+|---|---|---|
+| **Expo Go** | OAuth de Supabase en el navegador | solo los pasos 1-3 |
+| **Dev build / release** | SDK nativo de Google (selector de cuentas) | además el paso 4 |
+
+El camino del navegador **no lleva ninguna credencial en el cliente**: el Client ID y
+el Secret viven solo en el dashboard de Supabase.
+
+### 1. Google Cloud Console
+
+1. Crea (o reusa) un proyecto en [console.cloud.google.com](https://console.cloud.google.com).
+2. **Pantalla de consentimiento de OAuth**: tipo *Externo*, nombre de la app, correo de
+   soporte y enlace a la política de privacidad. Mientras esté en modo prueba, añádete
+   como *usuario de prueba*.
+3. **Credenciales → Crear credenciales → ID de cliente de OAuth → Aplicación web**.
+   - URI de redirección autorizada:
+     `https://dngolugwcemkexbeagzu.supabase.co/auth/v1/callback`
+   - Guarda el **Client ID** y el **Client secret**.
+
+### 2. Supabase → proveedor Google
+
+Dashboard → Authentication → Providers → **Google**: activa, pega el Client ID y el
+Client secret de la *aplicación web*, guarda.
+
+### 3. Supabase → URLs de redirección
+
+Authentication → URL Configuration → **Redirect URLs**, añade:
+
+```
+futbolismo://**
+exp://**
+```
+
+- `futbolismo://**` — dev build y release.
+- `exp://**` — Expo Go. Metro imprime la URL exacta al arrancar
+  (`exp://192.168.x.x:8081`); si el comodín no te lo acepta, pega esa URL con `/--/**`
+  al final. **Ojo: cambia si cambias de red Wi-Fi.**
+
+Sin este paso el navegador vuelve a la app pero sin tokens, y verás el error
+"Google no devolvió una sesión".
+
+### 4. Solo para el dev build: cliente Android
+
+1. Credenciales → **ID de cliente de OAuth → Android**.
+   - Nombre del paquete: `app.futbolismo`
+   - Huella SHA-1: `npx eas-cli@latest credentials` (Android → perfil → SHA-1)
+2. En el proveedor Google de Supabase, añade ese **Client ID de Android** al campo
+   *Authorized Client IDs* (separado por comas), para que acepte el `idToken` nativo.
+3. Pon el **Client ID de la aplicación web** como `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+   en el perfil `base` de `apps/mobile/eas.json` y vuelve a compilar.
+
+### 5. Recomendado
+
+Authentication → Policies → activa **Leaked password protection**.
+
+### Sobre "Iniciar sesión con Apple"
+
+Requiere el **Apple Developer Program: 99 USD al año**; no hay nivel gratuito que
+permita configurarlo. Y solo es obligatorio si publicas en la App Store de iOS
+ofreciendo otros logins sociales. Para una app solo de Google Play **no hace falta**.
 
 ## 3. Secret de The Odds API
 

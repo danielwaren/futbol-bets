@@ -65,15 +65,16 @@ Todo lo que empieza por `EXPO_PUBLIC_` se inyecta en el bundle; no pongas secret
 - **Email:** `tester@fantasybets.local` / `test123456` (el formulario aparece prellenado
   en modo dev; en release se revela tocando el logo 5 veces). **Borrar este usuario antes
   de publicar.**
-- **Google:** requiere un dev build (fase 8) o configurar `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
-  + esquema `futbolismo://` en Google Cloud.
+- **Google:** funciona en Expo Go por el navegador. Requiere el proveedor Google activado
+  en Supabase y `exp://**` en las URLs de redirección permitidas — pasos en
+  `docs/SETUP.md` §2. En el dev build usa el selector de cuentas nativo.
 
 ## Qué funciona en Expo Go
 
 | Función | Expo Go | Dev build (EAS) |
 |---|---|---|
 | Login email / Supabase | ✅ | ✅ |
-| Login Google | ⚠️ solo con Web Client ID + redirect configurado | ✅ nativo |
+| Login Google | ✅ por navegador (OAuth de Supabase) | ✅ nativo, selector de cuentas |
 | Partidos reales (matches_cache) | ✅ | ✅ |
 | Registrar / editar / resolver apuestas | ✅ | ✅ |
 | Estadísticas (6 charts) | ✅ | ✅ |

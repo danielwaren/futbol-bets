@@ -52,6 +52,10 @@ Escaneas el QR con el APK (no con Expo Go). Recarga en caliente igual que antes.
 
 ## 4. Google Sign-In nativo
 
+> El login con Google **ya funciona en Expo Go** por el navegador (OAuth de Supabase),
+> sin credenciales en el cliente — ver `docs/SETUP.md` §2. Esta sección es solo para
+> el selector de cuentas **nativo** del dev build.
+
 ### 4.1 Google Cloud Console
 
 1. Crea (o reusa) un proyecto en [console.cloud.google.com](https://console.cloud.google.com).
