@@ -76,11 +76,38 @@ exp://**
 Sin este paso el navegador vuelve a la app pero sin tokens, y verás el error
 "Google no devolvió una sesión".
 
-### 4. Solo para el dev build: cliente Android
+### 4. Cliente Android — MÁS ADELANTE, no ahora
 
-1. Credenciales → **ID de cliente de OAuth → Android**.
+> **Con los pasos 1-3 el login por Google ya funciona en Expo Go.** Este paso es
+> solo para el selector de cuentas *nativo* del dev build.
+>
+> **No lo intentes todavía:** la huella SHA-1 que pide Google **no existe** hasta que
+> EAS genera el keystore en tu primer build. No hay dónde consultarla antes.
+
+Cuando ya quieras el dev build, en este orden:
+
+```bash
+cd apps/mobile
+npx eas-cli@latest login
+npx eas-cli@latest init      # crea extra.eas.projectId en app.json — commitéalo
+npx eas-cli@latest build --profile development --platform android
+```
+
+Durante ese primer build EAS pregunta por las credenciales de firma: deja que **las
+genere él**. Recién entonces:
+
+```bash
+npx eas-cli@latest credentials
+```
+
+Menú interactivo → **Android** → perfil **development** → muestra el keystore y su
+`SHA-1 Fingerprint` (20 pares hexadecimales, `AB:CD:...`).
+
+Con esa huella ya en mano:
+
+1. Google Cloud → Credenciales → **ID de cliente de OAuth → Android**.
    - Nombre del paquete: `app.futbolismo`
-   - Huella SHA-1: `npx eas-cli@latest credentials` (Android → perfil → SHA-1)
+   - Huella SHA-1: la del paso anterior
 2. En el proveedor Google de Supabase, añade ese **Client ID de Android** al campo
    *Authorized Client IDs* (separado por comas), para que acepte el `idToken` nativo.
 3. Pon el **Client ID de la aplicación web** como `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
