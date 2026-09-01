@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import Animated, { FadeInDown } from 'react-native-reanimated'
@@ -10,7 +10,7 @@ import {
   type League,
 } from '@futbolismo/core'
 import { LeagueLogo } from '@/components/leagues/LeagueLogo'
-import { Button, Card, ErrorText, Springy, Txt } from '@/components/ui'
+import { Button, Card, ErrorText, Spinner, Springy, Txt } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useProfile } from '@/hooks/useProfile'
 import { useEntitlements } from '@/hooks/useEntitlements'
@@ -26,12 +26,41 @@ export default function ChooseLeagues() {
   const { openPaywall } = usePaywall()
   const save = useSetFreeLeagues(userId)
 
-  const firstTime = entitlements.needsLeagueChoice
-  /** En free la elección es definitiva: cambiarla es función premium. */
-  const locked = !firstTime && !entitlements.isPremium
+  /**
+   * El modo se fija UNA vez, cuando el perfil ya cargó, y no se recalcula.
+   *
+   * Derivarlo en cada render rompía la pantalla: `needsLeagueChoice` es false
+   * mientras el perfil carga y vuelve a ser false en cuanto se guardan las
+   * ligas, así que la pantalla se convertía en la versión "bloqueada" —sin
+   * botón de confirmar y sin historial al que volver— antes de poder navegar.
+   */
+  const [mode, setMode] = useState<'first' | 'locked' | 'premium' | null>(null)
 
-  const [picked, setPicked] = useState<League[]>(profile?.freeLeagues ?? [])
+  useEffect(() => {
+    if (mode || entitlements.loading || !profile) return
+    if (entitlements.isPremium) setMode('premium')
+    else if (profile.freeLeagues == null) setMode('first')
+    else setMode('locked')
+  }, [mode, entitlements.loading, entitlements.isPremium, profile])
+
+  const firstTime = mode === 'first'
+  /** En free la elección es definitiva: cambiarla es función premium. */
+  const locked = mode === 'locked'
+
+  const [picked, setPicked] = useState<League[]>([])
+
+  // Precarga la selección guardada en cuanto llega el perfil.
+  useEffect(() => {
+    if (profile?.freeLeagues) setPicked(profile.freeLeagues)
+  }, [profile?.freeLeagues])
+
   const ready = picked.length === FREE_LEAGUE_SLOTS
+
+  /** Vuelve atrás solo si hay historial; si no, al home. */
+  function goBack() {
+    if (router.canGoBack()) router.back()
+    else router.replace('/')
+  }
 
   /** Con 3 elegidas, tocar otra reemplaza la más antigua (nunca queda trabado). */
   function toggle(id: League) {
@@ -49,12 +78,21 @@ export default function ChooseLeagues() {
     return out
   }, [])
 
-  if (entitlements.isPremium && !firstTime) {
+  // Perfil aún cargando: sin esto se vería un instante la pantalla equivocada.
+  if (mode === null) {
+    return (
+      <View style={[s.root, { justifyContent: 'center' }]}>
+        <Spinner />
+      </View>
+    )
+  }
+
+  if (mode === 'premium') {
     return (
       <View style={[s.root, { paddingTop: insets.top + 40, padding: 24, gap: 16 }]}>
         <Txt variant="screen">Tienes las 10 ligas</Txt>
         <Txt variant="small">Con Premium juegas todas sin elegir.</Txt>
-        <Button title="Volver" variant="secondary" onPress={() => router.back()} />
+        <Button title="Volver" variant="secondary" onPress={goBack} />
       </View>
     )
   }
@@ -151,7 +189,7 @@ export default function ChooseLeagues() {
                   title="Cancelar"
                   variant="ghost"
                   size="sm"
-                  onPress={() => router.back()}
+                  onPress={goBack}
                 />
               )}
               <Button
@@ -164,7 +202,7 @@ export default function ChooseLeagues() {
                   save.mutate(picked, {
                     onSuccess: () => {
                       if (firstTime) router.replace('/')
-                      else router.back()
+                      else goBack()
                     },
                   })
                 }}
@@ -176,7 +214,7 @@ export default function ChooseLeagues() {
 
       {locked && (
         <View style={{ position: 'absolute', top: insets.top + 8, right: 16 }}>
-          <Button title="Volver" variant="ghost" size="sm" onPress={() => router.back()} />
+          <Button title="Volver" variant="ghost" size="sm" onPress={goBack} />
         </View>
       )}
     </View>

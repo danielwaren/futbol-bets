@@ -32,7 +32,16 @@ import { useEntitlements } from '@/hooks/useEntitlements'
 import { useOnboardingSeen } from '@/lib/onboarding'
 import { c } from '@/theme'
 
-SplashScreen.preventAutoHideAsync()
+// En web y en algunos hosts de Expo Go no hay splash nativa registrada, y estas
+// llamadas rechazan la promesa. No es un fallo real: se ignora.
+SplashScreen.preventAutoHideAsync().catch(() => {})
+
+let splashHidden = false
+function hideSplashOnce() {
+  if (splashHidden) return
+  splashHidden = true
+  SplashScreen.hideAsync().catch(() => {})
+}
 
 // Rutas accesibles sin sesión.
 const PUBLIC = ['login', 'onboarding', 'privacidad', 'terminos', 'eliminar-cuenta']
@@ -69,7 +78,7 @@ function Gate() {
 
   useEffect(() => {
     if (!navReady || booting) return
-    void SplashScreen.hideAsync()
+    hideSplashOnce()
     const first = (segments[0] ?? '') as string
 
     // El onboarding va primero SIEMPRE en el primer arranque, aunque haya una
