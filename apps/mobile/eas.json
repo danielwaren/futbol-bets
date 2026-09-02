@@ -5,7 +5,7 @@
   },
   "build": {
     "base": {
-      "node": "20.18.0",
+      "node": "22.11.0",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://dngolugwcemkexbeagzu.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_ofmDuXZoBEWk2QX2gC3OzA_d_n_QGtq",
@@ -16,17 +16,23 @@
       "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "extends": "base",
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "extends": "base",
       "autoIncrement": true,
-      "android": { "buildType": "app-bundle" }
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
