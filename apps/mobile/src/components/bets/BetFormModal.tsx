@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Platform, View } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
 import {
   formatCLP,
   formatDateTime,
@@ -16,6 +15,7 @@ import {
   type Market,
 } from '@futbolismo/core'
 import { Sheet, Button, Field, Input, Select, ErrorText, Txt } from '@/components/ui'
+import { DatePicker } from '@/components/DatePicker'
 import { c, radius } from '@/theme'
 
 interface FormState {
@@ -238,9 +238,8 @@ export function BetFormModal({
               onPress={() => setShowDate(true)}
             />
             {showDate && (
-              <DateTimePicker
+              <DatePicker
                 value={st.matchDate}
-                mode="date"
                 onChange={(_e, d) => {
                   setShowDate(Platform.OS === 'ios')
                   if (d) set('matchDate', d)

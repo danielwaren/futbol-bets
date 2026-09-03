@@ -1,6 +1,9 @@
+import { Platform } from 'react-native'
 import Constants from 'expo-constants'
 
-export const isNative = true
+/** true en iOS/Android; false en la build web (PWA). */
+export const isNative = Platform.OS !== 'web'
+export const isWeb = Platform.OS === 'web'
 
 /** Expo Go no tiene módulos nativos (RevenueCat, AdMob, Google nativo). */
 export const isExpoGo = Constants.appOwnership === 'expo'

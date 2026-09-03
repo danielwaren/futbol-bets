@@ -62,7 +62,9 @@ function ChartCard({
 
 function useChartWidth() {
   const { width } = useWindowDimensions()
-  return Math.min(width, 560) - 32 - 30
+  // Suelo de 240: en el primer render width puede ser 0 y las librerías de
+  // gráficos reciben un ancho negativo (SVG lo rechaza).
+  return Math.max(240, Math.min(width, 560) - 32 - 30)
 }
 
 /** Ejes en mono y sin rejilla estridente: la cifra manda, no el adorno. */

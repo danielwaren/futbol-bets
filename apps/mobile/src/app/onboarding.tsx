@@ -36,12 +36,16 @@ export default function Onboarding() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
+  // useWindowDimensions puede devolver 0 en el primer render (react-native-web
+  // y el primer frame nativo). Sin el suelo, el SVG recibía width negativo.
+  const artSize = Math.max(140, Math.min(width - 96, 260))
   const scroller = useRef<ScrollView>(null)
   const [index, setIndex] = useState(0)
 
   const last = index === SLIDES.length - 1
 
   function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    if (width <= 0) return
     const i = Math.round(e.nativeEvent.contentOffset.x / width)
     if (i !== index) setIndex(i)
   }
@@ -90,7 +94,7 @@ export default function Onboarding() {
             key={s.scene}
             style={{ width, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 28 }}
           >
-            <OnboardingArt scene={s.scene} size={Math.min(width - 96, 260)} />
+            <OnboardingArt scene={s.scene} size={artSize} />
             <View style={{ gap: 12, alignItems: 'center' }}>
               <Txt variant="screen" size={25} center>
                 {s.title}

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
 import {
   addDays,
   formatMatchDate,
@@ -11,6 +10,7 @@ import {
 } from '@futbolismo/core'
 import { Card, Chip, Springy, Txt } from '@/components/ui'
 import { Icon, ICON_STROKE } from '@/components/icons'
+import { DatePicker } from '@/components/DatePicker'
 import { c, leagueColor, radius } from '@/theme'
 
 export function DateLeagueBar({
@@ -53,9 +53,8 @@ export function DateLeagueBar({
       </View>
 
       {showPicker && (
-        <DateTimePicker
+        <DatePicker
           value={new Date(`${date}T12:00:00`)}
-          mode="date"
           onChange={(_e, d) => {
             setShowPicker(false)
             if (d) onDateChange(toDateInputValue(d))

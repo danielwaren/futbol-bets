@@ -2,7 +2,7 @@ import * as AuthSession from 'expo-auth-session'
 import { getQueryParams } from 'expo-auth-session/build/QueryParams'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@futbolismo/core'
-import { googleWebClientId, isExpoGo } from './platform'
+import { googleWebClientId, isExpoGo, isWeb } from './platform'
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -19,7 +19,8 @@ WebBrowser.maybeCompleteAuthSession()
  * Client ID y el Secret viven en el proveedor Google del dashboard de Supabase.
  */
 export function nativeGoogleAvailable(): boolean {
-  return !isExpoGo && Boolean(googleWebClientId)
+  // En web el SDK nativo no existe: siempre va por el flujo de navegador.
+  return !isWeb && !isExpoGo && Boolean(googleWebClientId)
 }
 
 /** Crea la sesión a partir de la URL de vuelta del navegador. */

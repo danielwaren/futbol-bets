@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# salida del export web (PWA) — la genera Vercel en cada despliegue
+dist-web/
