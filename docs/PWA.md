@@ -34,9 +34,31 @@ no vale: el service worker exige origen http/https).
 ## Desplegar en Vercel
 
 1. [vercel.com](https://vercel.com) → **Add New → Project** → importa el repo.
-2. **Root Directory: `apps/mobile`** ← importante, es un monorepo.
-3. El resto lo toma de `vercel.json` (build, salida y cabeceras).
-4. Deploy.
+2. **Root Directory: `apps/mobile`** ← imprescindible. Si se deja en la raíz o
+   en `apps/web`, Vercel construye la app Vite antigua y no la PWA: se ve una
+   pantalla del color de fondo y `/manifest.json` responde 404.
+3. **Settings → Environment Variables** (Production y Preview):
+
+   | Name | Value |
+   |---|---|
+   | `EXPO_PUBLIC_SUPABASE_URL` | `https://dngolugwcemkexbeagzu.supabase.co` |
+   | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `sb_publishable_ofmDuXZoBEWk2QX2gC3OzA_d_n_QGtq` |
+   | `EXPO_PUBLIC_ODDS_PROVIDER` | `supabase` |
+
+   Vercel **no lee `eas.json`** (eso es solo para EAS Build) ni `.env` (está en
+   `.gitignore`). Sin estas variables el build falla con un mensaje explícito
+   desde `src/initCore.ts`.
+4. El resto lo toma de `vercel.json` (build, salida y cabeceras).
+5. Deploy.
+
+### Comprobar que desplegó la PWA y no la app vieja
+
+```bash
+curl -s -o /dev/null -w "%{http_code}
+" https://<tu-dominio>.vercel.app/manifest.json
+```
+
+Debe responder **200**. Si da 404, el Root Directory está mal.
 
 Cada `git push` vuelve a desplegar. La app se actualiza sola sin reinstalar nada.
 
