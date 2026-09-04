@@ -1,17 +1,12 @@
-import { useRef, useState } from 'react'
-import {
-  Pressable,
-  ScrollView,
-  useWindowDimensions,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from 'react-native'
+import { useState } from 'react'
+import { Pressable, View } from 'react-native'
+import Animated, { FadeIn } from 'react-native-reanimated'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { OnboardingArt } from '@/components/onboarding/OnboardingArt'
 import { Button, Txt } from '@/components/ui'
 import { markOnboardingSeen } from '@/lib/onboarding'
+import { useReducedMotion } from '@/lib/motion'
 import { c } from '@/theme'
 
 const SLIDES = [
@@ -32,48 +27,48 @@ const SLIDES = [
   },
 ]
 
+/**
+ * Una diapositiva a la vez (no un carrusel horizontal): el `ScrollView horizontal
+ * pagingEnabled` de RN no se comporta igual en web —las diapositivas se apilan— y
+ * para 3 pantallas de onboarding el botón + los puntos bastan.
+ */
 export default function Onboarding() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const { width } = useWindowDimensions()
-  // useWindowDimensions puede devolver 0 en el primer render (react-native-web
-  // y el primer frame nativo). Sin el suelo, el SVG recibía width negativo.
-  const artSize = Math.max(140, Math.min(width - 96, 260))
-  const scroller = useRef<ScrollView>(null)
+  const reduced = useReducedMotion()
   const [index, setIndex] = useState(0)
 
+  const slide = SLIDES[index]
   const last = index === SLIDES.length - 1
-
-  function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    if (width <= 0) return
-    const i = Math.round(e.nativeEvent.contentOffset.x / width)
-    if (i !== index) setIndex(i)
-  }
 
   async function finish() {
     await markOnboardingSeen()
-    // Si se abrió a propósito (Cuenta → "Ver tutorial") volvemos a donde estaba;
-    // en el primer arranque no hay historial y el gate decide el destino real
-    // (/login sin sesión, tabs con sesión).
     if (router.canGoBack()) router.back()
     else router.replace('/')
   }
 
   function next() {
     if (last) return void finish()
-    // El índice se actualiza aquí y no en onMomentumScrollEnd: en Android ese
-    // evento NO se dispara con un scrollTo programático, así que el contador se
-    // quedaba en 0 y cada toque volvía a la misma diapositiva.
-    const target = index + 1
-    setIndex(target)
-    scroller.current?.scrollTo({ x: target * width, animated: true })
+    setIndex((i) => i + 1)
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: c.night, paddingTop: insets.top }}>
-      <View style={{ height: 44, justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 16 }}>
+      <View
+        style={{
+          height: 44,
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          paddingHorizontal: 16,
+        }}
+      >
         {!last && (
-          <Pressable onPress={finish} hitSlop={12}>
+          <Pressable
+            onPress={finish}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Saltar tutorial"
+          >
             <Txt variant="label" size={10}>
               Saltar
             </Txt>
@@ -81,44 +76,53 @@ export default function Onboarding() {
         )}
       </View>
 
-      <ScrollView
-        ref={scroller}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScroll}
-        style={{ flex: 1 }}
+      <Animated.View
+        key={index}
+        entering={reduced ? FadeIn.duration(120) : FadeIn.duration(260)}
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 32,
+          gap: 28,
+        }}
       >
-        {SLIDES.map((s) => (
-          <View
-            key={s.scene}
-            style={{ width, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 28 }}
-          >
-            <OnboardingArt scene={s.scene} size={artSize} />
-            <View style={{ gap: 12, alignItems: 'center' }}>
-              <Txt variant="screen" size={25} center>
-                {s.title}
-              </Txt>
-              <Txt variant="small" center style={{ lineHeight: 21, maxWidth: 320 }}>
-                {s.body}
-              </Txt>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+        <OnboardingArt scene={slide.scene} size={240} />
+        <View style={{ gap: 12, alignItems: 'center' }}>
+          <Txt variant="screen" size={25} center>
+            {slide.title}
+          </Txt>
+          <Txt variant="small" center style={{ lineHeight: 21, maxWidth: 320 }}>
+            {slide.body}
+          </Txt>
+        </View>
+      </Animated.View>
 
-      <View style={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 20, gap: 20 }}>
+      <View
+        style={{
+          paddingHorizontal: 24,
+          paddingBottom: insets.bottom + 20,
+          gap: 20,
+        }}
+      >
         <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
           {SLIDES.map((_, i) => (
-            <View
+            <Pressable
               key={i}
-              style={{
-                width: i === index ? 20 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: i === index ? c.amber : c.line,
-              }}
-            />
+              onPress={() => setIndex(i)}
+              accessibilityRole="button"
+              accessibilityLabel={`Ir a la pantalla ${i + 1}`}
+              hitSlop={8}
+            >
+              <View
+                style={{
+                  width: i === index ? 20 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: i === index ? c.amber : c.line,
+                }}
+              />
+            </Pressable>
           ))}
         </View>
         <Button title={last ? 'Empezar' : 'Siguiente'} onPress={next} />
