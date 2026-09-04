@@ -48,7 +48,8 @@ no vale: el service worker exige origen http/https).
    Vercel **no lee `eas.json`** (eso es solo para EAS Build) ni `.env` (está en
    `.gitignore`). Sin estas variables el build falla con un mensaje explícito
    desde `src/initCore.ts`.
-4. El resto lo toma de `vercel.json` (build, salida y cabeceras).
+4. El resto lo toma de `vercel.json` (build, salida, `cleanUrls` para que
+   `/onboarding` sirva `onboarding.html`, y cabeceras de caché).
 5. Deploy.
 
 ### Comprobar que desplegó la PWA y no la app vieja
