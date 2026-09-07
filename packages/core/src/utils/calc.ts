@@ -181,10 +181,24 @@ export function bankrollSeries(
     cumPnl += delta
     points.push({
       date: bet.settledAt as string,
-      label: `${bet.homeTeam} vs ${bet.awayTeam}`,
+      label: betTitle(bet),
       balance: Math.round(balance),
       pnl: Math.round(cumPnl),
     })
   }
   return points
+}
+
+/**
+ * Título de una apuesta para listas y gráficos. Una combinada no tiene "local
+ * vs visita": se nombra por cuántas selecciones lleva.
+ */
+export function betTitle(
+  bet: Pick<Bet, 'kind' | 'homeTeam' | 'awayTeam' | 'legs'>,
+): string {
+  if (bet.kind === 'parlay') {
+    const n = bet.legs?.length ?? 0
+    return `Combinada · ${n} ${n === 1 ? 'selección' : 'selecciones'}`
+  }
+  return `${bet.homeTeam} vs ${bet.awayTeam}`
 }

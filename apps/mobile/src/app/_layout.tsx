@@ -26,6 +26,7 @@ import { MonetizationProvider } from '@/context/MonetizationContext'
 import { PaywallProvider } from '@/context/PaywallContext'
 import { BankrollProvider } from '@/context/BankrollContext'
 import { BetFormProvider } from '@/context/BetFormContext'
+import { BetSlipProvider } from '@/context/BetSlipContext'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { useOnboardingSeen } from '@/lib/onboarding'
 import { c } from '@/theme'
@@ -134,7 +135,9 @@ export default function RootLayout() {
               <PaywallProvider>
                 <BankrollProvider>
                   <BetFormProvider>
-                    <Gate />
+                    <BetSlipProvider>
+                      <Gate />
+                    </BetSlipProvider>
                   </BetFormProvider>
                 </BankrollProvider>
               </PaywallProvider>

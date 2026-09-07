@@ -21,6 +21,7 @@ export function Screen({
   subtitle,
   right,
   children,
+  footer,
   onRefresh,
   refreshing,
   scroll = true,
@@ -29,6 +30,8 @@ export function Screen({
   subtitle?: string
   right?: ReactNode
   children: ReactNode
+  /** Barra flotante anclada abajo, por encima del scroll (p. ej. el cupón). */
+  footer?: ReactNode
   onRefresh?: () => void
   refreshing?: boolean
   scroll?: boolean
@@ -78,6 +81,7 @@ export function Screen({
       <View style={[s.root, pad]}>
         {header}
         {children}
+        {footer}
       </View>
     )
   }
@@ -120,6 +124,8 @@ export function Screen({
           {subtitle ? <Txt variant="label">{subtitle}</Txt> : null}
         </Animated.View>
       ) : null}
+
+      {footer}
     </View>
   )
 }

@@ -3,9 +3,11 @@ import { Platform, View } from 'react-native'
 import {
   formatCLP,
   formatDateTime,
+  BETTABLE_MARKETS,
   LEAGUES,
+  lineForMarket,
   MARKETS,
-  MARKET_LIST,
+  oddsForSelection,
   potentialReturn,
   selectionLabel,
   type Bet,
@@ -38,15 +40,7 @@ function oddFor(
   selection: string,
 ): number | undefined {
   if (!prefill?.match) return prefill?.odds
-  const o = prefill.match.odds
-  if (market === '1x2' && o['1x2'])
-    return o['1x2'][selection as 'home' | 'draw' | 'away']
-  if (market === 'goals' && o.goals)
-    return o.goals[selection as 'over' | 'under']
-  if (market === 'corners' && o.corners)
-    return o.corners[selection as 'over' | 'under']
-  if (market === 'btts' && o.btts) return o.btts[selection as 'yes' | 'no']
-  return undefined
+  return oddsForSelection(prefill.match.odds, market, selection)
 }
 
 function initial(prefill?: BetPrefill, editing?: Bet): FormState {
@@ -68,8 +62,8 @@ function initial(prefill?: BetPrefill, editing?: Bet): FormState {
   const match = prefill?.match
   const market = prefill?.market ?? '1x2'
   const selection = prefill?.selection ?? MARKETS[market].selections[0].value
-  const line =
-    prefill?.line ?? match?.odds[market as 'goals' | 'corners']?.line ?? null
+  // Del feed si el partido la trae; si no, la sugerida del catálogo.
+  const line = prefill?.line ?? lineForMarket(match?.odds, market)
   return {
     league: match?.league ?? 'chile',
     homeTeam: match?.homeTeam ?? '',
@@ -149,7 +143,7 @@ export function BetFormModal({
   function changeMarket(market: Market) {
     const firstSel = MARKETS[market].selections[0].value
     const suggested = oddFor(prefill, market, firstSel)
-    const sLine = prefill?.match?.odds[market as 'goals' | 'corners']?.line ?? null
+    const sLine = lineForMarket(prefill?.match?.odds, market)
     setSt((s) => ({
       ...s,
       market,
@@ -253,7 +247,7 @@ export function BetFormModal({
       <Field label="Mercado">
         <Select
           value={st.market}
-          options={MARKET_LIST.map((m) => ({ value: m.id, label: m.shortLabel }))}
+          options={BETTABLE_MARKETS.map((m) => ({ value: m.id, label: m.shortLabel }))}
           onChange={(v) => changeMarket(v as Market)}
         />
       </Field>
@@ -268,7 +262,7 @@ export function BetFormModal({
       <View style={{ flexDirection: 'row', gap: 10 }}>
         {mk.hasLine && (
           <View style={{ flex: 1 }}>
-            <Field label="Línea">
+            <Field label="Línea" hint={mk.unit}>
               <Input
                 value={st.line}
                 keyboardType="decimal-pad"
@@ -279,7 +273,10 @@ export function BetFormModal({
           </View>
         )}
         <View style={{ flex: 1 }}>
-          <Field label="Cuota">
+          <Field
+            label="Cuota"
+            hint={mk.oddsSource === 'manual' ? 'de tu casa' : undefined}
+          >
             <Input
               value={st.odds}
               keyboardType="decimal-pad"

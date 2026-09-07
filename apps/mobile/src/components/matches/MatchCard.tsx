@@ -5,10 +5,13 @@ import {
   formatOdds,
   LEAGUES,
   MARKETS,
+  selectionLabel,
   type Market,
   type Match,
+  type OverUnderOdds,
 } from '@futbolismo/core'
 import { useBetForm } from '@/context/BetFormContext'
+import { useBetSlip } from '@/context/BetSlipContext'
 import { Springy, Txt } from '@/components/ui'
 import { Icon, ICON_STROKE } from '@/components/icons'
 import { enterAt, useReducedMotion } from '@/lib/motion'
@@ -22,11 +25,13 @@ function Odd({
   market,
   label,
   odds,
+  selected,
   onPress,
 }: {
   market: string
   label: string
   odds: number | undefined
+  selected?: boolean
   onPress: () => void
 }) {
   const off = odds == null
@@ -37,13 +42,23 @@ function Odd({
       style={{ flex: 1 }}
       accessibilityRole="button"
       accessibilityLabel={`${market}, ${label}, cuota ${odds != null ? formatOdds(odds) : 'no disponible'}`}
-      accessibilityState={{ disabled: off }}
+      accessibilityState={{ disabled: off, selected }}
     >
-      <View style={[s.odd, off && s.oddOff]}>
-        <Txt variant="label" size={10} style={{ letterSpacing: 0.9 }}>
+      <View style={[s.odd, off && s.oddOff, selected && s.oddOn]}>
+        <Txt
+          variant="label"
+          size={10}
+          color={selected ? c.night : undefined}
+          style={{ letterSpacing: 0.9 }}
+        >
           {label}
         </Txt>
-        <Txt variant="data" size={16} color={off ? c.inkFaint : c.ink} style={{ marginTop: 2 }}>
+        <Txt
+          variant="data"
+          size={16}
+          color={selected ? c.night : off ? c.inkFaint : c.ink}
+          style={{ marginTop: 2 }}
+        >
           {odds != null ? formatOdds(odds) : '—'}
         </Txt>
       </View>
@@ -51,7 +66,7 @@ function Odd({
   )
 }
 
-function Market_({ title, children }: { title: string; children: React.ReactNode }) {
+function MarketRow({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: 6 }}>
       <Txt variant="label" size={10}>
@@ -84,13 +99,21 @@ function Team({ side, name }: { side: 'L' | 'V'; name: string }) {
   )
 }
 
+/** Mercados over/under que llegan con cuota del feed, en orden de aparición. */
+const OU_MARKETS: Market[] = ['goals', 'corners', 'cards']
+
 export function MatchCard({ match, index = 0 }: { match: Match; index?: number }) {
   const league = LEAGUES[match.league]
   const accent = leagueColor[match.league] ?? c.amber
   const { openNew } = useBetForm()
+  const { mode, toggle, isPicked } = useBetSlip()
   const reduced = useReducedMotion()
   const { odds } = match
 
+  /**
+   * En modo simple abre el formulario; en modo combinada suma la selección al
+   * cupón (y al tocarla otra vez la quita).
+   */
   const pick = (
     market: Market,
     selection: string,
@@ -98,8 +121,26 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
     line?: number | null,
   ) => {
     if (value == null) return
+    if (mode === 'parlay') {
+      toggle({
+        league: match.league,
+        matchId: match.id,
+        homeTeam: match.homeTeam,
+        awayTeam: match.awayTeam,
+        matchDate: match.commenceTime,
+        market,
+        selection,
+        selectionLabel: selectionLabel(market, selection, line ?? null),
+        line: line ?? null,
+        odds: value,
+      })
+      return
+    }
     openNew({ match, market, selection, line: line ?? null, odds: value })
   }
+
+  const picked = (market: Market, selection: string) =>
+    mode === 'parlay' && isPicked(match.id, market, selection)
 
   return (
     <Animated.View entering={enterAt(index, reduced)} style={[s.card, shadow.card]}>
@@ -131,31 +172,73 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
       </View>
 
       <View style={s.markets}>
-        <Market_ title={MARKETS['1x2'].label}>
-          <Odd market="Resultado" label="1" odds={odds['1x2']?.home} onPress={() => pick('1x2', 'home', odds['1x2']?.home)} />
-          <Odd market="Resultado" label="X" odds={odds['1x2']?.draw} onPress={() => pick('1x2', 'draw', odds['1x2']?.draw)} />
-          <Odd market="Resultado" label="2" odds={odds['1x2']?.away} onPress={() => pick('1x2', 'away', odds['1x2']?.away)} />
-        </Market_>
+        <MarketRow title={MARKETS['1x2'].label}>
+          <Odd
+            market="Resultado"
+            label="1"
+            odds={odds['1x2']?.home}
+            selected={picked('1x2', 'home')}
+            onPress={() => pick('1x2', 'home', odds['1x2']?.home)}
+          />
+          <Odd
+            market="Resultado"
+            label="X"
+            odds={odds['1x2']?.draw}
+            selected={picked('1x2', 'draw')}
+            onPress={() => pick('1x2', 'draw', odds['1x2']?.draw)}
+          />
+          <Odd
+            market="Resultado"
+            label="2"
+            odds={odds['1x2']?.away}
+            selected={picked('1x2', 'away')}
+            onPress={() => pick('1x2', 'away', odds['1x2']?.away)}
+          />
+        </MarketRow>
 
-        {odds.goals && (
-          <Market_ title={`Goles · ${odds.goals.line}`}>
-            <Odd market="Goles" label="Over" odds={odds.goals.over} onPress={() => pick('goals', 'over', odds.goals?.over, odds.goals?.line)} />
-            <Odd market="Goles" label="Under" odds={odds.goals.under} onPress={() => pick('goals', 'under', odds.goals?.under, odds.goals?.line)} />
-          </Market_>
-        )}
-
-        {odds.corners && (
-          <Market_ title={`Córners · ${odds.corners.line}`}>
-            <Odd market="Córners" label="Over" odds={odds.corners.over} onPress={() => pick('corners', 'over', odds.corners?.over, odds.corners?.line)} />
-            <Odd market="Córners" label="Under" odds={odds.corners.under} onPress={() => pick('corners', 'under', odds.corners?.under, odds.corners?.line)} />
-          </Market_>
-        )}
+        {OU_MARKETS.map((m) => {
+          const ou = odds[m as 'goals' | 'corners' | 'cards'] as
+            | OverUnderOdds
+            | undefined
+          if (!ou) return null
+          const name = MARKETS[m].shortLabel
+          return (
+            <MarketRow key={m} title={`${name} · ${ou.line}`}>
+              <Odd
+                market={name}
+                label="Over"
+                odds={ou.over}
+                selected={picked(m, 'over')}
+                onPress={() => pick(m, 'over', ou.over, ou.line)}
+              />
+              <Odd
+                market={name}
+                label="Under"
+                odds={ou.under}
+                selected={picked(m, 'under')}
+                onPress={() => pick(m, 'under', ou.under, ou.line)}
+              />
+            </MarketRow>
+          )
+        })}
 
         {odds.btts && (
-          <Market_ title={MARKETS.btts.label}>
-            <Odd market="Ambos anotan" label="Sí" odds={odds.btts.yes} onPress={() => pick('btts', 'yes', odds.btts?.yes)} />
-            <Odd market="Ambos anotan" label="No" odds={odds.btts.no} onPress={() => pick('btts', 'no', odds.btts?.no)} />
-          </Market_>
+          <MarketRow title={MARKETS.btts.label}>
+            <Odd
+              market="Ambos anotan"
+              label="Sí"
+              odds={odds.btts.yes}
+              selected={picked('btts', 'yes')}
+              onPress={() => pick('btts', 'yes', odds.btts?.yes)}
+            />
+            <Odd
+              market="Ambos anotan"
+              label="No"
+              odds={odds.btts.no}
+              selected={picked('btts', 'no')}
+              onPress={() => pick('btts', 'no', odds.btts?.no)}
+            />
+          </MarketRow>
         )}
       </View>
 
@@ -166,7 +249,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
       >
         <View style={s.foot}>
           <Txt variant="label" size={10}>
-            Otro mercado
+            Tiros · T. a puerta · otro
           </Txt>
           <View style={s.footCta}>
             <Txt variant="label" size={10} color={c.amber}>
@@ -205,6 +288,8 @@ const s = StyleSheet.create({
   },
   /** Deshabilitado: opacidad 0.38-0.5 según la regla disabled-states. */
   oddOff: { opacity: 0.42 },
+  /** En el cupón: ámbar sólido, el único acento interactivo de la app. */
+  oddOn: { backgroundColor: c.amber },
   foot: {
     minHeight: TAP,
     flexDirection: 'row',

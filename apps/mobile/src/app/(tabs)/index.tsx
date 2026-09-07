@@ -15,17 +15,20 @@ import { MatchCard } from '@/components/matches/MatchCard'
 import { AdSlot } from '@/components/AdSlot'
 import { BankrollSwitcher } from '@/components/bankroll/BankrollSwitcher'
 import { BankrollSummary } from '@/components/bankroll/BankrollSummary'
-import { Button, EmptyState, ErrorText, Txt } from '@/components/ui'
+import { Button, Chip, EmptyState, ErrorText, Txt } from '@/components/ui'
+import { BetSlipBar } from '@/components/bets/BetSlipBar'
 import { MatchSkeleton, SkeletonList } from '@/components/Skeleton'
 import { useBankrollContext } from '@/context/BankrollContext'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { usePaywall } from '@/context/PaywallContext'
+import { useBetSlip } from '@/context/BetSlipContext'
 import { c, motion, radius } from '@/theme'
 
 export default function Matches() {
   const entitlements = useEntitlements()
   const { openPaywall } = usePaywall()
   const { selected: bankroll } = useBankrollContext()
+  const slip = useBetSlip()
   const allowed = entitlements.leagues
   const allowedKey = allowed.join(',')
 
@@ -45,7 +48,8 @@ export default function Matches() {
   return (
     <Screen
       title="Partidos"
-      subtitle="1X2 · Goles · Córners · BTTS"
+      subtitle="1X2 · Goles · Córners · Tarjetas · BTTS"
+      footer={<BetSlipBar />}
       onRefresh={() => q.refetch()}
       refreshing={q.isFetching}
       right={
@@ -73,6 +77,28 @@ export default function Matches() {
           </Txt>
         </View>
       )}
+
+      {/* Simple = tocar una cuota abre el formulario. Combinada = la suma al
+          cupón. Explícito y no esconde la combinada tras un gesto invisible. */}
+      <View style={{ flexDirection: 'row', gap: 7 }}>
+        <Chip
+          label="Simple"
+          active={slip.mode === 'single'}
+          onPress={() => slip.setMode('single')}
+        />
+        <Chip
+          label="Combinada"
+          active={slip.mode === 'parlay'}
+          onPress={() => slip.setMode('parlay')}
+        />
+        {slip.mode === 'parlay' ? (
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <Txt variant="label" size={10}>
+              Toca cuotas de partidos distintos
+            </Txt>
+          </View>
+        ) : null}
+      </View>
 
       <DateLeagueBar
         date={date}

@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { BetDraft, BetStatus } from '../types'
+import type { BetDraft, BetStatus, ParlayDraft } from '../types'
 import {
   createBet,
+  createParlay,
   deleteBet,
   listBets,
   reopenBet,
+  reopenLeg,
   requestSettle,
   settleBet,
+  settleLeg,
   updateBet,
+  updateParlayStake,
 } from '../services/bets'
 export const betKeys = {
   list: (bankrollId: string | undefined) => ['bets', bankrollId] as const,
@@ -37,6 +41,33 @@ export function useCreateBet() {
     ({ bankrollId, draft }: { bankrollId: string; draft: BetDraft }) =>
       createBet(bankrollId, draft),
   )
+}
+
+export function useCreateParlay() {
+  return useBetMutation(
+    ({ bankrollId, draft }: { bankrollId: string; draft: ParlayDraft }) =>
+      createParlay(bankrollId, draft),
+  )
+}
+
+/** Lo único editable de una combinada creada: el monto (y las notas). */
+export function useUpdateParlayStake() {
+  return useBetMutation(
+    ({ id, stake, notes }: { id: string; stake: number; notes: string | null }) =>
+      updateParlayStake(id, stake, notes),
+  )
+}
+
+/** Resuelve una pata a mano; el trigger recalcula la combinada entera. */
+export function useSettleLeg() {
+  return useBetMutation(
+    ({ id, status }: { id: string; status: Exclude<BetStatus, 'pending'> }) =>
+      settleLeg(id, status),
+  )
+}
+
+export function useReopenLeg() {
+  return useBetMutation((id: string) => reopenLeg(id))
 }
 
 export function useUpdateBet() {

@@ -14,6 +14,7 @@ function makeBet(partial: Partial<Bet>): Bet {
   return {
     id: crypto.randomUUID(),
     bankrollId: 'bk',
+    kind: 'single',
     league: 'chile',
     matchId: null,
     homeTeam: 'A',
@@ -32,6 +33,7 @@ function makeBet(partial: Partial<Bet>): Bet {
     settledAt: null,
     settledBy: null,
     resultDetail: null,
+    legs: [],
     ...partial,
   }
 }
