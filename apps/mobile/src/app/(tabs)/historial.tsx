@@ -6,6 +6,7 @@ import {
   formatCLP,
   formatPercent,
   formatSignedCLP,
+  MARKETS,
   MARKET_LIST,
   useBets,
   useSettleAll,
@@ -50,13 +51,28 @@ export default function History() {
   )
   const stats = computeStats(filtered)
 
+  /**
+   * Distinguir "el partido sigue en juego" de "las fuentes están caídas". Sin
+   * esto el aviso decía lo mismo en los dos casos y la resolución automática
+   * podía llevar días sin funcionar sin que nadie se enterara.
+   */
+  const d = settleAll.data
+  const sinFuentes = Boolean(d && (d.quotaExhausted || !d.statsAvailable))
+  const motivoSinFuentes = !d
+    ? ''
+    : d.quotaExhausted && !d.statsAvailable
+      ? 'The Odds API sin créditos este mes y falta configurar API_FOOTBALL_KEY. Cierra las apuestas a mano mientras tanto.'
+      : d.quotaExhausted
+        ? 'The Odds API se quedó sin créditos este mes; se reintenta con las estadísticas.'
+        : 'Falta configurar API_FOOTBALL_KEY en Supabase para leer córners, tarjetas y tiros.'
+
   const awaiting = useMemo(() => {
     const now = Date.now()
     return all.filter(
       (b) =>
         b.status === 'pending' &&
         b.matchId &&
-        b.market !== 'corners' &&
+        MARKETS[b.market].settleSource !== 'manual' &&
         new Date(b.matchDate).getTime() < now,
     ).length
   }, [all])
@@ -99,12 +115,29 @@ export default function History() {
         />
       )}
       {settleAll.data && (
-        <View style={{ backgroundColor: c.amberSoft, borderRadius: radius.md, padding: 11 }}>
-          <Txt variant="dataSm" color={c.amber}>
+        <View
+          style={{
+            backgroundColor: settleAll.data.settled > 0 ? c.amberSoft : c.board2,
+            borderRadius: radius.md,
+            padding: 11,
+            gap: 3,
+          }}
+        >
+          <Txt
+            variant="dataSm"
+            color={settleAll.data.settled > 0 ? c.amber : c.inkDim}
+          >
             {settleAll.data.settled > 0
               ? `${settleAll.data.settled} resueltas automáticamente.`
-              : 'Sin resultados finales aún.'}
+              : sinFuentes
+                ? 'No se pudo consultar los resultados.'
+                : 'Sin resultados finales aún.'}
           </Txt>
+          {settleAll.data.settled === 0 && sinFuentes ? (
+            <Txt variant="label" size={9.5}>
+              {motivoSinFuentes}
+            </Txt>
+          ) : null}
         </View>
       )}
 

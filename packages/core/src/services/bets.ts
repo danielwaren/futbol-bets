@@ -316,17 +316,32 @@ export async function deleteBet(betId: string): Promise<void> {
   if (error) throw error
 }
 
+export interface SettleResult {
+  checked: number
+  settled: number
+  /** The Odds API sin créditos: no hay marcadores. */
+  quotaExhausted: boolean
+  /** Falta `API_FOOTBALL_KEY`: no hay estadísticas ni marcador de respaldo. */
+  statsAvailable: boolean
+}
+
 /**
  * Pide al backend resolver las apuestas pendientes del usuario cuyos partidos
  * ya terminaron (marcador de The Odds API + estadísticas de API-Football).
+ *
+ * Devuelve también por qué NO pudo resolver. Sin esto la app decía "sin
+ * resultados finales aún" tanto si el partido seguía en juego como si las dos
+ * fuentes estaban caídas, y el usuario no tenía forma de distinguirlo.
  */
-export async function requestSettle(): Promise<{
-  checked: number
-  settled: number
-}> {
+export async function requestSettle(): Promise<SettleResult> {
   const { data, error } = await supabase.functions.invoke('settle-bets', {
     body: {},
   })
   if (error) throw error
-  return { checked: data?.checked ?? 0, settled: data?.settled ?? 0 }
+  return {
+    checked: data?.checked ?? 0,
+    settled: data?.settled ?? 0,
+    quotaExhausted: Boolean(data?.quotaExhausted),
+    statsAvailable: data?.statsAvailable !== false,
+  }
 }

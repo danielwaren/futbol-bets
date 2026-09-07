@@ -26,15 +26,17 @@ function Odd({
   label,
   odds,
   selected,
+  disabled,
   onPress,
 }: {
   market: string
   label: string
   odds: number | undefined
   selected?: boolean
+  disabled?: boolean
   onPress: () => void
 }) {
-  const off = odds == null
+  const off = odds == null || disabled
   return (
     <Springy
       onPress={onPress}
@@ -102,6 +104,15 @@ function Team({ side, name }: { side: 'L' | 'V'; name: string }) {
 /** Mercados over/under que llegan con cuota del feed, en orden de aparición. */
 const OU_MARKETS: Market[] = ['goals', 'corners', 'cards']
 
+/** Un partido de fútbol dura ~105 min con el descanso; 150 da margen de sobra. */
+const FINISHED_AFTER_MIN = 150
+
+function matchState(commenceTime: string): 'upcoming' | 'live' | 'finished' {
+  const min = (Date.now() - new Date(commenceTime).getTime()) / 60_000
+  if (min < 0) return 'upcoming'
+  return min < FINISHED_AFTER_MIN ? 'live' : 'finished'
+}
+
 export function MatchCard({ match, index = 0 }: { match: Match; index?: number }) {
   const league = LEAGUES[match.league]
   const accent = leagueColor[match.league] ?? c.amber
@@ -109,6 +120,11 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
   const { mode, toggle, isPicked } = useBetSlip()
   const reduced = useReducedMotion()
   const { odds } = match
+
+  // Ya empezado no se apuesta: las cuotas cacheadas son de antes del pitido y
+  // registrar una apuesta con ellas falsea la banca.
+  const state = matchState(match.commenceTime)
+  const closed = state !== 'upcoming'
 
   /**
    * En modo simple abre el formulario; en modo combinada suma la selección al
@@ -120,7 +136,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
     value: number | undefined,
     line?: number | null,
   ) => {
-    if (value == null) return
+    if (value == null || closed) return
     if (mode === 'parlay') {
       toggle({
         league: match.league,
@@ -161,9 +177,21 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
             {league.shortLabel}
           </Txt>
         </View>
-        <Txt variant="label" size={10}>
-          {formatMatchTime(match.commenceTime)}
-        </Txt>
+        {closed ? (
+          <View style={[s.state, state === 'live' && s.stateLive]}>
+            <Txt
+              variant="label"
+              size={9}
+              color={state === 'live' ? c.amber : c.inkFaint}
+            >
+              {state === 'live' ? 'En juego' : 'Finalizado'}
+            </Txt>
+          </View>
+        ) : (
+          <Txt variant="label" size={10}>
+            {formatMatchTime(match.commenceTime)}
+          </Txt>
+        )}
       </View>
 
       <View style={s.teams}>
@@ -177,6 +205,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
             market="Resultado"
             label="1"
             odds={odds['1x2']?.home}
+            disabled={closed}
             selected={picked('1x2', 'home')}
             onPress={() => pick('1x2', 'home', odds['1x2']?.home)}
           />
@@ -184,6 +213,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
             market="Resultado"
             label="X"
             odds={odds['1x2']?.draw}
+            disabled={closed}
             selected={picked('1x2', 'draw')}
             onPress={() => pick('1x2', 'draw', odds['1x2']?.draw)}
           />
@@ -191,6 +221,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
             market="Resultado"
             label="2"
             odds={odds['1x2']?.away}
+            disabled={closed}
             selected={picked('1x2', 'away')}
             onPress={() => pick('1x2', 'away', odds['1x2']?.away)}
           />
@@ -208,6 +239,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
                 market={name}
                 label="Over"
                 odds={ou.over}
+                disabled={closed}
                 selected={picked(m, 'over')}
                 onPress={() => pick(m, 'over', ou.over, ou.line)}
               />
@@ -215,6 +247,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
                 market={name}
                 label="Under"
                 odds={ou.under}
+                disabled={closed}
                 selected={picked(m, 'under')}
                 onPress={() => pick(m, 'under', ou.under, ou.line)}
               />
@@ -228,6 +261,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
               market="Ambos anotan"
               label="Sí"
               odds={odds.btts.yes}
+              disabled={closed}
               selected={picked('btts', 'yes')}
               onPress={() => pick('btts', 'yes', odds.btts?.yes)}
             />
@@ -235,6 +269,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
               market="Ambos anotan"
               label="No"
               odds={odds.btts.no}
+              disabled={closed}
               selected={picked('btts', 'no')}
               onPress={() => pick('btts', 'no', odds.btts?.no)}
             />
@@ -249,7 +284,7 @@ export function MatchCard({ match, index = 0 }: { match: Match; index?: number }
       >
         <View style={s.foot}>
           <Txt variant="label" size={10}>
-            Tiros · T. a puerta · otro
+            {closed ? 'Registrar a mano' : 'Tiros · T. a puerta · otro'}
           </Txt>
           <View style={s.footCta}>
             <Txt variant="label" size={10} color={c.amber}>
@@ -290,6 +325,14 @@ const s = StyleSheet.create({
   oddOff: { opacity: 0.42 },
   /** En el cupón: ámbar sólido, el único acento interactivo de la app. */
   oddOn: { backgroundColor: c.amber },
+  state: {
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: c.line,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  stateLive: { borderColor: c.amber },
   foot: {
     minHeight: TAP,
     flexDirection: 'row',

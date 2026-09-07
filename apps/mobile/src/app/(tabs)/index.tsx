@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import {
@@ -43,7 +43,19 @@ export default function Matches() {
   const q = useMatches(leagues, date)
   const refresh = useRefreshMatches(leagues)
   const bets = useBets(bankroll?.id)
-  const matches = q.data?.matches ?? []
+  /**
+   * Los partidos vienen por hora de inicio, así que los ya jugados se quedaban
+   * arriba estorbando el resto del día. Se mandan al final conservando su
+   * orden; no se ocultan porque puedes querer registrar a mano una apuesta de
+   * un partido que ya terminó.
+   */
+  const matches = useMemo(() => {
+    const list = q.data?.matches ?? []
+    const now = Date.now()
+    const started = (m: (typeof list)[number]) =>
+      new Date(m.commenceTime).getTime() <= now
+    return [...list].sort((a, b) => Number(started(a)) - Number(started(b)))
+  }, [q.data])
 
   return (
     <Screen
